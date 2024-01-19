@@ -1,7 +1,7 @@
 # DCC Central
 
 As a DCC central, I use the open source project [CommandStation-EX](https://github.com/DCC-EX/CommandStation-EX), here is added as asubmodule up this project.
-Usigin Arduino ATMega 328, I generate a booster with the use of the motor diver [BTS7960](./BTS7960 Motor Driver.pdf)
+Usigin Arduino ATMega 328, I generate a booster with the use of the motor diver [BTS7960](./'BTS7960 Motor Driver.pdf')
 
 ## CommandStation-EX
 
@@ -13,4 +13,4 @@ In this folder contains the source code to coltrol the booster with the ATMega 3
 
 ## Booster-Shield
 
-In this folder contains the circuit board to control the [motor driver](./BTS7960 Motor Driver.pdf)
+In this folder contains the circuit board to control the [motor driver](./'BTS7960 Motor Driver.pdf')
