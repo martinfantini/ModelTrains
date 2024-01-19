@@ -20,3 +20,7 @@ For control all the model trains mock-up, I use the [Rocrail](https://wiki.rocra
 I do have the shema of the mock-up already dome.
 
 for the future, I can test it on [JMRI](https://www.jmri.org/), because it seems more programaticlly.
+
+## Signal
+
+This is the DCC circuic, which sniffers the DCC signaliing and generate changes for the signals in the mock-up.
