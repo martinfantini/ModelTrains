@@ -1,3 +1,6 @@
 [submodule "DCC Central/CommandStation-EX"]
 	path = DCC Central/CommandStation-EX
 	url = https://github.com/DCC-EX/CommandStation-EX.git
+[submodule "Expander/EX-IOExpander"]
+	path = Expander/EX-IOExpander
+	url = https://github.com/DCC-EX/EX-IOExpander.git
