@@ -19,4 +19,4 @@ Here is the Ocupancy board, to know where is the train located.
 For control all the model trains mock-up, I use the [Rocrail](https://wiki.rocrail.net/doku.php?id=start). Because
 I do have the shema of the mock-up already dome.
 
-for the future, I can test it on JRI, because it seems more programaticlly.
+for the future, I can test it on [JMRI](https://www.jmri.org/), because it seems more programaticlly.
