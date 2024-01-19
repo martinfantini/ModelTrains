@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "rur")(type "Legacy")(uri "/home/rmfantini/Projects/Ralf_Platine/kicad.lib/rur.lib")(options "")(descr ""))
+)

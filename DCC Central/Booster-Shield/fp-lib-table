@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "Arduino_Nano")(type "KiCad")(uri "/home/rmfantini/Projects/Ralf_Platine/KiCad_Arduino_Nano_DFPlayer_footprints/Arduino_Nano.pretty")(options "")(descr ""))
+)
