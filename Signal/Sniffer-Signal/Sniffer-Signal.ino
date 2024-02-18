@@ -28,27 +28,27 @@
 #define CON_4_PIN_Y 13  // Pin 19 - PB5
 #define CON_4_PIN_O 12  // Pin 18 - PB4PD7
 
-//DCC Custom CVs
-//DCC Board Address
-//  Here re the two board address for the two DCC values.
+// DCC Custom CVs
+// DCC Board Address
+// Here are the two board address for the two CV DCC values.
 #define CV_DCC_BOARD_ADDRESS_1 37
 #define CV_DCC_BOARD_ADDRESS_2 38
 
-//Addresing Mode:
+// Addresing Mode:
 #define CV_DCC_ADDRESSING_MODE 39
 
-//Initial default values
+// Initial default values
 #define CV_INITIAL_COLOR_CONNECTOR_1 40
 #define CV_INITIAL_COLOR_CONNECTOR_2 41
 #define CV_INITIAL_COLOR_CONNECTOR_3 42
 #define CV_INITIAL_COLOR_CONNECTOR_4 43
 
-//Default values for each CV
-//Defult values for address
+// Default values for each CV
+// Default values for address
 #define DEFAULT_VALUE_BOARD_ADDRESS_1 37
 #define DEFAULT_VALUE_BOARD_ADDRESS_2 38
 
-//Defult values for initial colors
+// Default values for initial colors
 #define DEFAULT_VALUE_COLOR_CONNECTOR_1 0
 #define DEFAULT_VALUE_COLOR_CONNECTOR_2 0
 #define DEFAULT_VALUE_COLOR_CONNECTOR_3 0

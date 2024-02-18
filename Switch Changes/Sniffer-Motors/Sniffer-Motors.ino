@@ -49,12 +49,12 @@ NmraDcc Dcc;
 #define CV_DCC_BOARD_ADDRESS_1 37
 #define CV_DCC_BOARD_ADDRESS_2 38
 
-//Default values for each CV
+// Addresing Mode:
+#define CV_DCC_ADDRESSING_MODE 39
+
+// Default values for each CV
 #define BOARD_ADDRESS_1_DEFAULT_VALUE 17
 #define BOARD_ADDRESS_2_DEFAULT_VALUE 18
-
-//Addresing Mode:
-#define CV_DCC_ADDRESSING_MODE 39
 
 enum AddressingMode
 {
