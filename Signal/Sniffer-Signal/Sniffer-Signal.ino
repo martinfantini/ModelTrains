@@ -1,6 +1,7 @@
 
 #include <NmraDcc.h>
 #include <EEPROM.h>
+#include <TimerOne.h>
 
 #define DEBUG_DCC
 
@@ -28,32 +29,82 @@
 #define CON_4_PIN_Y 13  // Pin 19 - PB5
 #define CON_4_PIN_O 12  // Pin 18 - PB4PD7
 
+/*----------------------------------------------------*/
 // DCC Custom CVs
-// DCC Board Address
-// Here are the two board address for the two CV DCC values.
+
+// DCC Board Address values
 #define CV_DCC_BOARD_ADDRESS_1 37
 #define CV_DCC_BOARD_ADDRESS_2 38
 
-// Addresing Mode:
+// Addressing Mode:
 #define CV_DCC_ADDRESSING_MODE 39
 
-// Initial default values
-#define CV_INITIAL_COLOR_CONNECTOR_1 40
-#define CV_INITIAL_COLOR_CONNECTOR_2 41
-#define CV_INITIAL_COLOR_CONNECTOR_3 42
-#define CV_INITIAL_COLOR_CONNECTOR_4 43
+// Initial color values:
+// x1-x2-x3-x4-x5-x6-x7-x8
+//        x1-x2-x3-x4: Values associated to the connector 2
+//        x5-x6-x7-x8: Values associated to the connector 1
+#define CV_INITIAL_COLOR_CONNECTOR_1_2 40
+#define CV_INITIAL_COLOR_CONNECTOR_3_4 42
 
+// Behaviour: One led has to blink associated to a output.
+// Has blinking mode default values
+// Value: y4-y3-y2-y1 x4-x3-x2-x1
+//      - y4-y3-y2-y1: which is the output has to blink
+//      - x4-x3-x2-x1: which of the 4 has to blink:
+// Example:
+//      - 0001 0010: Here will blink with the Port 1, the output G and the output R will be on.
+//      - 1001 0010: Here will blink with the Port 1 and Port 4, the output G and the output R will be on.
+#define CV_BLINKING_CONNECTOR_1 44
+#define CV_BLINKING_CONNECTOR_2 45
+#define CV_BLINKING_CONNECTOR_3 46
+#define CV_BLINKING_CONNECTOR_4 47
+
+/*----------------------------------------------------*/
 // Default values for each CV
 // Default values for address
 #define DEFAULT_VALUE_BOARD_ADDRESS_1 37
 #define DEFAULT_VALUE_BOARD_ADDRESS_2 38
 
 // Default values for initial colors
-#define DEFAULT_VALUE_COLOR_CONNECTOR_1 0
-#define DEFAULT_VALUE_COLOR_CONNECTOR_2 0
-#define DEFAULT_VALUE_COLOR_CONNECTOR_3 0
-#define DEFAULT_VALUE_COLOR_CONNECTOR_4 0
+#define DEFAULT_VALUE_COLOR_CONNECTOR_1_2 0
+#define DEFAULT_VALUE_COLOR_CONNECTOR_3_4 0
 
+// Default effect values
+#define DEFAULT_VALUE_BLINKING_CONNECTOR_1 0
+#define DEFAULT_VALUE_BLINKING_CONNECTOR_2 0
+#define DEFAULT_VALUE_BLINKING_CONNECTOR_3 0
+#define DEFAULT_VALUE_BLINKING_CONNECTOR_4 0
+
+/*----------------------------------------------------*/
+/*Char to store the effect, initially no effect*/
+uint8_t control_effect_1_2 = 0x00;
+uint8_t control_effect_3_4 = 0x00;
+
+// enum values for the different configurations
+enum Connector
+{
+  One = 1,
+  Two = 2,
+  Three = 3,
+  Four = 4,
+};
+
+enum AddressingMode
+{
+  Pada = 1, // 1: PADA mode, which is port address mode. And it takes account the values: CV_DCC_BOARD_ADDRESS_1 and CV_DCC_BOARD_ADDRESS_2
+  Fada = 2  // 2: FADA mode, which means that there is only address
+};
+
+enum Colour
+{
+  None = 0,
+  Red = 1,
+  Green = 2,
+  Yellow = 3,
+  Orange = 4,
+};
+
+//Helper methods for the printing in the serial values
 String PinToString(uint8_t pin)
 {
   switch(pin)
@@ -77,21 +128,6 @@ String PinToString(uint8_t pin)
   }
 }
 
-enum AddressingMode
-{
-  Pada = 1, // 1: PADA mode, which is port address mode. And it takes account the values: CV_DCC_BOARD_ADDRESS_1 and CV_DCC_BOARD_ADDRESS_2
-  Fada = 2  // 2: FADA mode, which means that there is only address
-};
-
-enum Colour
-{
-  None = 0,
-  Red = 1,
-  Green = 2,
-  Yellow = 3,
-  Orange = 4,
-};
-
 String ColourToString(uint8_t col)
 {
   switch(col)
@@ -104,14 +140,6 @@ String ColourToString(uint8_t col)
   }
 }
 
-enum Connector
-{
-  One = 1,
-  Two = 2,
-  Three = 3,
-  Four = 4,
-};
-
 String ConnectorToString(uint8_t con)
 {
   switch(con)
@@ -123,35 +151,18 @@ String ConnectorToString(uint8_t con)
   }
 }
 
+// Helper Mask to read easy the values
+#define READ_POS_0 0x01
+#define READ_POS_1 0x02
+#define READ_POS_2 0x04
+#define READ_POS_3 0x08
+
+#define READ_POS_4 0x10
+#define READ_POS_5 0x20
+#define READ_POS_6 0x40
+#define READ_POS_7 0x80
+
 NmraDcc Dcc;
-
-/* Commented Out because uin our case it is not implemented
-void notifyDccAccTurnoutOutput(uint16_t Addr, uint8_t Direction, uint8_t OutputPower) 
-{
-  int addressing_mode = Dcc.getCV(CV_DCC_ADDRESSING_MODE);
-#ifdef DEBUG_DCC
-  Serial.println("--------------------");
-  Serial.println("notifyDccAccTurnoutOutput");
-  if (addressing_mode==AddressingMode::Pada)
-    Serial.println("Use Addressing Mode PADA");
-  else
-    Serial.print("Use Addressing Mode FADA");
-#endif
-
-  if(addressing_mode == AddressingMode::Fada)
-  {
-    #ifdef DEBUG_DCC
-      Serial.print("DCC Address: "); Serial.println(Dcc.getAddr());
-      Serial.print("Address: "); Serial.println(Addr);
-      Serial.print("Direction: "); Serial.println(Direction);
-      Serial.print("Not implemented ");
-    #endif
-  }
-#ifdef DEBUG_DCC
-  Serial.println("--------------------");
-#endif
-}
-*/
 
 void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, uint8_t State) 
 {
@@ -171,7 +182,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
     int outputInPair = OutputAddr & 0x01;
     int boardAddress_1 = Dcc.getCV(CV_DCC_BOARD_ADDRESS_1);
     int boardAddress_2 = Dcc.getCV(CV_DCC_BOARD_ADDRESS_2);
-    
+
     #ifdef DEBUG_DCC
       Serial.print("DCC Board Add 1: "); Serial.println(boardAddress_1);
       Serial.print("DCC Board Add 2: "); Serial.println(boardAddress_2);
@@ -187,55 +198,185 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
       switch (pairAddress) 
       {
         case 1:
+        case 2:
+        {
+          uint8_t effect_connector = Dcc.getCV(CV_BLINKING_CONNECTOR_1);
+          if(pairAddress == 1)
           {
             if (outputInPair == 0)
             {
               TurnOnColor(Connector::One, Colour::Red);
+              if (effect_connector & READ_POS_4)
+              {
+                if (effect_connector & READ_POS_1)
+                {
+                  EnableEffect(Connector::One, Colour::Green);
+                }
+                if (effect_connector & READ_POS_2)
+                {
+                  EnableEffect(Connector::One, Colour::Yellow);
+                }
+                if (effect_connector & READ_POS_3)
+                {
+                  EnableEffect(Connector::One, Colour::Orange);
+                }
+              }
             }
             else
             {
               TurnOnColor(Connector::One, Colour::Green);
+              if (effect_connector & READ_POS_5)
+              {
+                if (effect_connector & READ_POS_0)
+                {
+                  EnableEffect(Connector::One, Colour::Red);
+                }
+                if (effect_connector & READ_POS_2)
+                {
+                  EnableEffect(Connector::One, Colour::Yellow);
+                }
+                if (effect_connector & READ_POS_3)
+                {
+                  EnableEffect(Connector::One, Colour::Orange);
+                }
+              }
             }
-            return;  
+            return;
           }
-        case 2:
+          else
           {
             if (outputInPair == 0)
             {
               TurnOnColor(Connector::One, Colour::Yellow);
+              if (effect_connector & READ_POS_6)
+              {
+                if (effect_connector & READ_POS_0)
+                {
+                  EnableEffect(Connector::One, Colour::Red);
+                }
+                if (effect_connector & READ_POS_1)
+                {
+                  EnableEffect(Connector::One, Colour::Green);
+                }
+                if (effect_connector & READ_POS_3)
+                {
+                  EnableEffect(Connector::One, Colour::Orange);
+                }
+              }
             }
             else
             {
               TurnOnColor(Connector::One, Colour::Orange);
+              if (effect_connector & READ_POS_7)
+              {
+                if (effect_connector & READ_POS_0)
+                {
+                  EnableEffect(Connector::One, Colour::Red);
+                }
+                if (effect_connector & READ_POS_1)
+                {
+                  EnableEffect(Connector::One, Colour::Green);
+                }
+                if (effect_connector & READ_POS_2)
+                {
+                  EnableEffect(Connector::One, Colour::Yellow);
+                }
+              }
             }
-            return;  
+            return;
           }
+        }
         case 3:
-          {
-            if (outputInPair == 0)
-            {
-              TurnOnColor(Connector::Two, Colour::Red);            
-            }
-            else
-            {
-              TurnOnColor(Connector::Two, Colour::Green);            
-            }
-            return;
-          }
         case 4:
+        {
+          uint8_t effect_connector = Dcc.getCV(CV_BLINKING_CONNECTOR_2);
+          if(pairAddress == 3)
           {
             if (outputInPair == 0)
             {
-              TurnOnColor(Connector::Two, Colour::Yellow);            
+              TurnOnColor(Connector::Two, Colour::Red);
+              if (effect_connector & READ_POS_4)
+              {
+                if (effect_connector & READ_POS_1)
+                {
+                  EnableEffect(Connector::Two, Colour::Green);
+                }
+                if (effect_connector & READ_POS_2)
+                {
+                  EnableEffect(Connector::Two, Colour::Yellow);
+                }
+                if (effect_connector & READ_POS_3)
+                {
+                  EnableEffect(Connector::Two, Colour::Orange);
+                }
+              }
             }
             else
             {
-              TurnOnColor(Connector::Two, Colour::Orange);            
+              TurnOnColor(Connector::Two, Colour::Green);
+              if (effect_connector & READ_POS_5)
+              {
+                if (effect_connector & READ_POS_0)
+                {
+                  EnableEffect(Connector::Two, Colour::Red);
+                }
+                if (effect_connector & READ_POS_2)
+                {
+                  EnableEffect(Connector::Two, Colour::Yellow);
+                }
+                if (effect_connector & READ_POS_3)
+                {
+                  EnableEffect(Connector::Two, Colour::Orange);
+                }
+              }
             }
             return;
           }
+          else
+          {
+            if (outputInPair == 0)
+            {
+              TurnOnColor(Connector::Two, Colour::Yellow);
+              if (effect_connector & READ_POS_6)
+              {
+                if (effect_connector & READ_POS_0)
+                {
+                  EnableEffect(Connector::Two, Colour::Red);
+                }
+                if (effect_connector & READ_POS_1)
+                {
+                  EnableEffect(Connector::Two, Colour::Green);
+                }
+                if (effect_connector & READ_POS_3)
+                {
+                  EnableEffect(Connector::Two, Colour::Orange);
+                }
+              }
+            }
+            else
+            {
+              TurnOnColor(Connector::Two, Colour::Orange);
+              if (effect_connector & READ_POS_7)
+              {
+                if (effect_connector & READ_POS_0)
+                {
+                  EnableEffect(Connector::Two, Colour::Red);
+                }
+                if (effect_connector & READ_POS_1)
+                {
+                  EnableEffect(Connector::Two, Colour::Green);
+                }
+                if (effect_connector & READ_POS_2)
+                {
+                  EnableEffect(Connector::Two, Colour::Yellow);
+                }
+              }
+            }
+            return;
+          }
+        }
       }
-    }
+    } // BoardAddr
      
     // check if the command is for our address and output
     if(BoardAddr == boardAddress_2)
@@ -243,56 +384,386 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
       switch (pairAddress) 
       {
         case 1:
-          {
-            if (outputInPair == 0)
-            {
-              TurnOnColor(Connector::Three, Colour::Red);             
-            }
-            else
-            {
-              TurnOnColor(Connector::Three, Colour::Green);            
-            }
-            return;  
-          }
         case 2:
+        {
+          uint8_t effect_connector = Dcc.getCV(CV_BLINKING_CONNECTOR_3);
+          if(pairAddress == 1)
           {
             if (outputInPair == 0)
             {
-              TurnOnColor(Connector::Three, Colour::Yellow);            
+              TurnOnColor(Connector::Three, Colour::Red);
+              if (effect_connector & READ_POS_4)
+              {
+                if (effect_connector & READ_POS_1)
+                {
+                  EnableEffect(Connector::Three, Colour::Green);
+                }
+                if (effect_connector & READ_POS_2)
+                {
+                  EnableEffect(Connector::Three, Colour::Yellow);
+                }
+                if (effect_connector & READ_POS_3)
+                {
+                  EnableEffect(Connector::Three, Colour::Orange);
+                }
+              }
             }
             else
             {
-              TurnOnColor(Connector::Three, Colour::Orange);            
+              TurnOnColor(Connector::Three, Colour::Green);
+              if (effect_connector & READ_POS_5)
+              {
+                if (effect_connector & READ_POS_0)
+                {
+                  EnableEffect(Connector::Three, Colour::Red);
+                }
+                if (effect_connector & READ_POS_2)
+                {
+                  EnableEffect(Connector::Three, Colour::Yellow);
+                }
+                if (effect_connector & READ_POS_3)
+                {
+                  EnableEffect(Connector::Three, Colour::Orange);
+                }
+              }
             }
-            return;  
+            return;
           }
+          else
+          {
+            if (outputInPair == 0)
+            {
+              TurnOnColor(Connector::Three, Colour::Yellow);
+              if (effect_connector & READ_POS_6)
+              {
+                if (effect_connector & READ_POS_0)
+                {
+                  EnableEffect(Connector::Three, Colour::Red);
+                }
+                if (effect_connector & READ_POS_1)
+                {
+                  EnableEffect(Connector::Three, Colour::Green);
+                }
+                if (effect_connector & READ_POS_3)
+                {
+                  EnableEffect(Connector::Three, Colour::Orange);
+                }
+              }
+            }
+            else
+            {
+              TurnOnColor(Connector::Three, Colour::Orange);
+              if (effect_connector & READ_POS_7)
+              {
+                if (effect_connector & READ_POS_0)
+                {
+                  EnableEffect(Connector::Three, Colour::Red);
+                }
+                if (effect_connector & READ_POS_1)
+                {
+                  EnableEffect(Connector::Three, Colour::Green);
+                }
+                if (effect_connector & READ_POS_2)
+                {
+                  EnableEffect(Connector::Three, Colour::Yellow);
+                }
+              }
+            }
+            return;
+          }
+        }
         case 3:
+        case 4:
+        {
+          uint8_t effect_connector = Dcc.getCV(CV_BLINKING_CONNECTOR_4);
+          if(pairAddress == 3)
           {
             if (outputInPair == 0)
             {
-              TurnOnColor(Connector::Four, Colour::Red);            
+              TurnOnColor(Connector::Four, Colour::Red);
+              if (effect_connector & READ_POS_4)
+              {
+                if (effect_connector & READ_POS_1)
+                {
+                  EnableEffect(Connector::Four, Colour::Green);
+                }
+                if (effect_connector & READ_POS_2)
+                {
+                  EnableEffect(Connector::Four, Colour::Yellow);
+                }
+                if (effect_connector & READ_POS_3)
+                {
+                  EnableEffect(Connector::Four, Colour::Orange);
+                }
+              }
             }
             else
             {
-              TurnOnColor(Connector::Four, Colour::Green);            
+              TurnOnColor(Connector::Four, Colour::Green);
+              if (effect_connector & READ_POS_5)
+              {
+                if (effect_connector & READ_POS_0)
+                {
+                  EnableEffect(Connector::Four, Colour::Red);
+                }
+                if (effect_connector & READ_POS_2)
+                {
+                  EnableEffect(Connector::Four, Colour::Yellow);
+                }
+                if (effect_connector & READ_POS_3)
+                {
+                  EnableEffect(Connector::Four, Colour::Orange);
+                }
+              }
             }
             return;
           }
-        case 4:
+          else
           {
             if (outputInPair == 0)
             {
-              TurnOnColor(Connector::Four, Colour::Yellow);            
+              TurnOnColor(Connector::Four, Colour::Yellow);
+              if (effect_connector & READ_POS_6)
+              {
+                if (effect_connector & READ_POS_0)
+                {
+                  EnableEffect(Connector::Four, Colour::Red);
+                }
+                if (effect_connector & READ_POS_1)
+                {
+                  EnableEffect(Connector::Four, Colour::Green);
+                }
+                if (effect_connector & READ_POS_3)
+                {
+                  EnableEffect(Connector::Four, Colour::Orange);
+                }
+              }
             }
             else
             {
-              TurnOnColor(Connector::Four, Colour::Orange);            
+              TurnOnColor(Connector::Four, Colour::Orange);
+              if (effect_connector & READ_POS_7)
+              {
+                if (effect_connector & READ_POS_0)
+                {
+                  EnableEffect(Connector::Four, Colour::Red);
+                }
+                if (effect_connector & READ_POS_1)
+                {
+                  EnableEffect(Connector::Four, Colour::Green);
+                }
+                if (effect_connector & READ_POS_2)
+                {
+                  EnableEffect(Connector::Four, Colour::Yellow);
+                }
+              }
             }
             return;
+          }
+        }
+      }
+    } // BoardAddr
+  } //Address mode Pada
+}
+
+void BlinkColors()
+{
+  if (control_effect_1_2 & READ_POS_4)
+  {
+    ToggleColorPin(CON_1_PIN_R);
+  }
+  if (control_effect_1_2 & READ_POS_5)
+  {
+    ToggleColorPin(CON_1_PIN_G);
+  }
+  if (control_effect_1_2 & READ_POS_6)
+  {
+    ToggleColorPin(CON_1_PIN_Y);
+  }
+  if (control_effect_1_2 & READ_POS_7)
+  {
+    ToggleColorPin(CON_1_PIN_O);
+  }
+  if (control_effect_1_2 & READ_POS_0)
+  {
+    ToggleColorPin(CON_2_PIN_R);
+  }
+  if (control_effect_1_2 & READ_POS_1)
+  {
+    ToggleColorPin(CON_2_PIN_G);
+  }
+  if (control_effect_1_2 & READ_POS_2)
+  {
+    ToggleColorPin(CON_2_PIN_Y);
+  }
+  if (control_effect_1_2 & READ_POS_3)
+  {
+    ToggleColorPin(CON_2_PIN_O);
+  }
+  if (control_effect_3_4 & READ_POS_4)
+  {
+    ToggleColorPin(CON_3_PIN_R);
+  }
+  if (control_effect_3_4 & READ_POS_5)
+  {
+    ToggleColorPin(CON_3_PIN_G);
+  }
+  if (control_effect_3_4 & READ_POS_6)
+  {
+    ToggleColorPin(CON_3_PIN_Y);
+  }
+  if (control_effect_3_4 & READ_POS_7)
+  {
+    ToggleColorPin(CON_3_PIN_O);
+  }
+  if (control_effect_3_4 & READ_POS_0)
+  {
+    ToggleColorPin(CON_4_PIN_R);
+  }
+  if (control_effect_3_4 & READ_POS_1)
+  {
+    ToggleColorPin(CON_4_PIN_G);
+  }
+  if (control_effect_3_4 & READ_POS_2)
+  {
+    ToggleColorPin(CON_4_PIN_Y);
+  }
+  if (control_effect_3_4 & READ_POS_3)
+  {
+    ToggleColorPin(CON_4_PIN_O);
+  }
+}
+
+#define READ_POS_0 0x01
+#define READ_POS_1 0x02
+#define READ_POS_2 0x04
+#define READ_POS_3 0x08
+
+#define READ_POS_4 0x10
+#define READ_POS_5 0x20
+#define READ_POS_6 0x40
+#define READ_POS_7 0x80
+
+void EnableEffect(uint8_t conn, uint8_t col)
+{
+#ifdef DEBUG_DCC
+    String colour_str(ColourToString(col));
+    String connector_str(ConnectorToString(conn));
+    Serial.println("--------------------");
+    Serial.println("EnableEffect");
+    Serial.print("Connector: "); Serial.println(connector_str);
+    Serial.print("Color: "); Serial.println(colour_str);
+    Serial.println("--------------------");
+#endif
+  noInterrupts();
+  switch(conn)
+  {
+    case Connector::One:
+    {
+      switch(col)
+      {
+          case Colour::Red:
+          {
+            control_effect_1_2 |= READ_POS_4;
+            break;
+          }
+          case Colour::Green:
+          {
+            control_effect_1_2 |= READ_POS_5;
+            break;
+          }
+          case Colour::Yellow:
+          {
+            control_effect_1_2 |= READ_POS_6;
+            break;
+          }
+          case Colour::Orange:
+          {
+            control_effect_1_2 |= READ_POS_7;
+            break;
+          }
+      }
+    }
+    case Connector::Two:
+    {
+      switch(col)
+      {
+          case Colour::Red:
+          {
+            control_effect_1_2 |= READ_POS_0;
+            break;
+          }
+          case Colour::Green:
+          {
+            control_effect_1_2 |= READ_POS_1;
+            break;
+          }
+          case Colour::Yellow:
+          {
+            control_effect_1_2 |= READ_POS_2;
+            break;
+          }
+          case Colour::Orange:
+          {
+            control_effect_1_2 |= READ_POS_3;
+            break;
+          }
+      }
+    }
+    case Connector::Three:
+    {
+      switch(col)
+      {
+          case Colour::Red:
+          {
+            control_effect_3_4 |= READ_POS_4;
+            break;
+          }
+          case Colour::Green:
+          {
+            control_effect_3_4 |= READ_POS_5;
+            break;
+          }
+          case Colour::Yellow:
+          {
+            control_effect_3_4 |= READ_POS_6;
+            break;
+          }
+          case Colour::Orange:
+          {
+            control_effect_3_4 |= READ_POS_7;
+            break;
+          }
+      }
+    }
+    case Connector::Four:
+    {
+      switch(col)
+      {
+          case Colour::Red:
+          {
+            control_effect_3_4 |= READ_POS_0;
+            break;
+          }
+          case Colour::Green:
+          {
+            control_effect_3_4 |= READ_POS_1;
+            break;
+          }
+          case Colour::Yellow:
+          {
+            control_effect_3_4 |= READ_POS_2;
+            break;
+          }
+          case Colour::Orange:
+          {
+            control_effect_3_4 |= READ_POS_3;
+            break;
           }
       }
     }
   }
+  interrupts();
 }
 
 void TurnOnColor(uint8_t conn, uint8_t col)
@@ -310,46 +781,47 @@ void TurnOnColor(uint8_t conn, uint8_t col)
   {
     case Connector::One:
     {
+      control_effect_1_2 &= 0x0F;
       switch(col)
       {
           case Colour::None:
           {
-            digitalWrite(CON_1_PIN_R, HIGH);
-            digitalWrite(CON_1_PIN_G, HIGH);
-            digitalWrite(CON_1_PIN_Y, HIGH);
-            digitalWrite(CON_1_PIN_O, HIGH);
+            TurnColorPin(CON_1_PIN_R, HIGH);
+            TurnColorPin(CON_1_PIN_G, HIGH);
+            TurnColorPin(CON_1_PIN_Y, HIGH);
+            TurnColorPin(CON_1_PIN_O, HIGH);
             return;
           }
           case Colour::Red:
           {
-            digitalWrite(CON_1_PIN_R, LOW);
-            digitalWrite(CON_1_PIN_G, HIGH);
-            digitalWrite(CON_1_PIN_Y, HIGH);
-            digitalWrite(CON_1_PIN_O, HIGH);
+            TurnColorPin(CON_1_PIN_R, LOW);
+            TurnColorPin(CON_1_PIN_G, HIGH);
+            TurnColorPin(CON_1_PIN_Y, HIGH);
+            TurnColorPin(CON_1_PIN_O, HIGH);
             return;
           }
           case Colour::Green:
           {
-            digitalWrite(CON_1_PIN_R, HIGH);
-            digitalWrite(CON_1_PIN_G, LOW);
-            digitalWrite(CON_1_PIN_Y, HIGH);
-            digitalWrite(CON_1_PIN_O, HIGH);
+            TurnColorPin(CON_1_PIN_R, HIGH);
+            TurnColorPin(CON_1_PIN_G, LOW);
+            TurnColorPin(CON_1_PIN_Y, HIGH);
+            TurnColorPin(CON_1_PIN_O, HIGH);
             return;
           }
           case Colour::Yellow:
           {
-            digitalWrite(CON_1_PIN_R, HIGH);
-            digitalWrite(CON_1_PIN_G, HIGH);
-            digitalWrite(CON_1_PIN_Y, LOW);
-            digitalWrite(CON_1_PIN_O, HIGH);
+            TurnColorPin(CON_1_PIN_R, HIGH);
+            TurnColorPin(CON_1_PIN_G, HIGH);
+            TurnColorPin(CON_1_PIN_Y, LOW);
+            TurnColorPin(CON_1_PIN_O, HIGH);
             return;
           }
           case Colour::Orange:
           {
-            digitalWrite(CON_1_PIN_R, HIGH);
-            digitalWrite(CON_1_PIN_G, HIGH);
-            digitalWrite(CON_1_PIN_Y, HIGH);
-            digitalWrite(CON_1_PIN_O, LOW);            
+            TurnColorPin(CON_1_PIN_R, HIGH);
+            TurnColorPin(CON_1_PIN_G, HIGH);
+            TurnColorPin(CON_1_PIN_Y, HIGH);
+            TurnColorPin(CON_1_PIN_O, LOW);
             return;
           }
       }
@@ -357,140 +829,143 @@ void TurnOnColor(uint8_t conn, uint8_t col)
     }
     case Connector::Two:
     {
+      control_effect_1_2 &= 0xF0;
       switch(col)
       {
           case Colour::None:
           {
-            digitalWrite(CON_2_PIN_R, HIGH);
-            digitalWrite(CON_2_PIN_G, HIGH);
-            digitalWrite(CON_2_PIN_Y, HIGH);
-            digitalWrite(CON_2_PIN_O, HIGH);
+            TurnColorPin(CON_2_PIN_R, HIGH);
+            TurnColorPin(CON_2_PIN_G, HIGH);
+            TurnColorPin(CON_2_PIN_Y, HIGH);
+            TurnColorPin(CON_2_PIN_O, HIGH);
             return;
           }
           case Colour::Red:
           {
-            digitalWrite(CON_2_PIN_R, LOW);
-            digitalWrite(CON_2_PIN_G, HIGH);
-            digitalWrite(CON_2_PIN_Y, HIGH);
-            digitalWrite(CON_2_PIN_O, HIGH);
+            TurnColorPin(CON_2_PIN_R, LOW);
+            TurnColorPin(CON_2_PIN_G, HIGH);
+            TurnColorPin(CON_2_PIN_Y, HIGH);
+            TurnColorPin(CON_2_PIN_O, HIGH);
             return;
           }
           case Colour::Green:
           {
-            digitalWrite(CON_2_PIN_R, HIGH);
-            digitalWrite(CON_2_PIN_G, LOW);
-            digitalWrite(CON_2_PIN_Y, HIGH);
-            digitalWrite(CON_2_PIN_O, HIGH);
+            TurnColorPin(CON_2_PIN_R, HIGH);
+            TurnColorPin(CON_2_PIN_G, LOW);
+            TurnColorPin(CON_2_PIN_Y, HIGH);
+            TurnColorPin(CON_2_PIN_O, HIGH);
             return;
           }
           case Colour::Yellow:
           {
-            digitalWrite(CON_2_PIN_R, HIGH);
-            digitalWrite(CON_2_PIN_G, HIGH);
-            digitalWrite(CON_2_PIN_Y, LOW);
-            digitalWrite(CON_2_PIN_O, HIGH);
+            TurnColorPin(CON_2_PIN_R, HIGH);
+            TurnColorPin(CON_2_PIN_G, HIGH);
+            TurnColorPin(CON_2_PIN_Y, LOW);
+            TurnColorPin(CON_2_PIN_O, HIGH);
             return;
           }
           case Colour::Orange:
           {
-            digitalWrite(CON_2_PIN_R, HIGH);
-            digitalWrite(CON_2_PIN_G, HIGH);
-            digitalWrite(CON_2_PIN_Y, HIGH);
-            digitalWrite(CON_2_PIN_O, LOW);            
+            TurnColorPin(CON_2_PIN_R, HIGH);
+            TurnColorPin(CON_2_PIN_G, HIGH);
+            TurnColorPin(CON_2_PIN_Y, HIGH);
+            TurnColorPin(CON_2_PIN_O, LOW);
             return;
           }
       }
       return;
-    }    
+    }
     case Connector::Three:
     {
+      control_effect_3_4 &= 0xF0;
       switch(col)
       {
           case Colour::None:
           {
-            digitalWrite(CON_3_PIN_R, HIGH);
-            digitalWrite(CON_3_PIN_G, HIGH);
-            digitalWrite(CON_3_PIN_Y, HIGH);
-            digitalWrite(CON_3_PIN_O, HIGH);
+            TurnColorPin(CON_3_PIN_R, HIGH);
+            TurnColorPin(CON_3_PIN_G, HIGH);
+            TurnColorPin(CON_3_PIN_Y, HIGH);
+            TurnColorPin(CON_3_PIN_O, HIGH);
             return;
           }        
           case Colour::Red:
           {
-            digitalWrite(CON_3_PIN_R, LOW);
-            digitalWrite(CON_3_PIN_G, HIGH);
-            digitalWrite(CON_3_PIN_Y, HIGH);
-            digitalWrite(CON_3_PIN_O, HIGH);
+            TurnColorPin(CON_3_PIN_R, LOW);
+            TurnColorPin(CON_3_PIN_G, HIGH);
+            TurnColorPin(CON_3_PIN_Y, HIGH);
+            TurnColorPin(CON_3_PIN_O, HIGH);
             return;
           }
           case Colour::Green:
           {
-            digitalWrite(CON_3_PIN_R, HIGH);
-            digitalWrite(CON_3_PIN_G, LOW);
-            digitalWrite(CON_3_PIN_Y, HIGH);
-            digitalWrite(CON_3_PIN_O, HIGH);
+            TurnColorPin(CON_3_PIN_R, HIGH);
+            TurnColorPin(CON_3_PIN_G, LOW);
+            TurnColorPin(CON_3_PIN_Y, HIGH);
+            TurnColorPin(CON_3_PIN_O, HIGH);
             return;
           }
           case Colour::Yellow:
           {
-            digitalWrite(CON_3_PIN_R, HIGH);
-            digitalWrite(CON_3_PIN_G, HIGH);
-            digitalWrite(CON_3_PIN_Y, LOW);
-            digitalWrite(CON_3_PIN_O, HIGH);
+            TurnColorPin(CON_3_PIN_R, HIGH);
+            TurnColorPin(CON_3_PIN_G, HIGH);
+            TurnColorPin(CON_3_PIN_Y, LOW);
+            TurnColorPin(CON_3_PIN_O, HIGH);
             return;
           }
           case Colour::Orange:
           {
-            digitalWrite(CON_3_PIN_R, HIGH);
-            digitalWrite(CON_3_PIN_G, HIGH);
-            digitalWrite(CON_3_PIN_Y, HIGH);
-            digitalWrite(CON_3_PIN_O, LOW);            
+            TurnColorPin(CON_3_PIN_R, HIGH);
+            TurnColorPin(CON_3_PIN_G, HIGH);
+            TurnColorPin(CON_3_PIN_Y, HIGH);
+            TurnColorPin(CON_3_PIN_O, LOW);
             return;
           }
       }     
       return;
-    }    
+    }
     case Connector::Four:
     {
+      control_effect_3_4 &= 0x0F;
       switch(col)
       {
           case Colour::None:
           {
-            digitalWrite(CON_4_PIN_R, HIGH);
-            digitalWrite(CON_4_PIN_G, HIGH);
-            digitalWrite(CON_4_PIN_Y, HIGH);
-            digitalWrite(CON_4_PIN_O, HIGH);
+            TurnColorPin(CON_4_PIN_R, HIGH);
+            TurnColorPin(CON_4_PIN_G, HIGH);
+            TurnColorPin(CON_4_PIN_Y, HIGH);
+            TurnColorPin(CON_4_PIN_O, HIGH);
             return;
           }        
           case Colour::Red:
           {
-            digitalWrite(CON_4_PIN_R, LOW);
-            digitalWrite(CON_4_PIN_G, HIGH);
-            digitalWrite(CON_4_PIN_Y, HIGH);
-            digitalWrite(CON_4_PIN_O, HIGH);
+            TurnColorPin(CON_4_PIN_R, LOW);
+            TurnColorPin(CON_4_PIN_G, HIGH);
+            TurnColorPin(CON_4_PIN_Y, HIGH);
+            TurnColorPin(CON_4_PIN_O, HIGH);
             return;
           }
           case Colour::Green:
           {
-            digitalWrite(CON_4_PIN_R, HIGH);
-            digitalWrite(CON_4_PIN_G, LOW);
-            digitalWrite(CON_4_PIN_Y, HIGH);
-            digitalWrite(CON_4_PIN_O, HIGH);
+            TurnColorPin(CON_4_PIN_R, HIGH);
+            TurnColorPin(CON_4_PIN_G, LOW);
+            TurnColorPin(CON_4_PIN_Y, HIGH);
+            TurnColorPin(CON_4_PIN_O, HIGH);
             return;
           }
           case Colour::Yellow:
           {
-            digitalWrite(CON_4_PIN_R, HIGH);
-            digitalWrite(CON_4_PIN_G, HIGH);
-            digitalWrite(CON_4_PIN_Y, LOW);
-            digitalWrite(CON_4_PIN_O, HIGH);
+            TurnColorPin(CON_4_PIN_R, HIGH);
+            TurnColorPin(CON_4_PIN_G, HIGH);
+            TurnColorPin(CON_4_PIN_Y, LOW);
+            TurnColorPin(CON_4_PIN_O, HIGH);
             return;
           }
           case Colour::Orange:
           {
-            digitalWrite(CON_4_PIN_R, HIGH);
-            digitalWrite(CON_4_PIN_G, HIGH);
-            digitalWrite(CON_4_PIN_Y, HIGH);
-            digitalWrite(CON_4_PIN_O, LOW);            
+            TurnColorPin(CON_4_PIN_R, HIGH);
+            TurnColorPin(CON_4_PIN_G, HIGH);
+            TurnColorPin(CON_4_PIN_Y, HIGH);
+            TurnColorPin(CON_4_PIN_O, LOW);
             return;
           }
       }
@@ -499,13 +974,23 @@ void TurnOnColor(uint8_t conn, uint8_t col)
   }
 }
 
+void TurnColorPin(uint8_t pin, bool value)
+{
+  digitalWrite(pin, value);
+}
+
+void ToggleColorPin(uint8_t pin)
+{
+  digitalWrite(pin, !digitalRead(pin));
+}
+
 void notifyCVChange(uint16_t CV, uint8_t Value)
 {
 #ifdef DEBUG_DCC
   Serial.println("--------------------");
   Serial.println("notifyCVChange");
   Serial.print("CV: "); Serial.println(CV);
-  Serial.print("Value: "); Serial.println(Value);  
+  Serial.print("Value: "); Serial.println(Value);
   Serial.println("--------------------");
 #endif
 
@@ -536,26 +1021,46 @@ void notifyCVChange(uint16_t CV, uint8_t Value)
       Dcc.setCV(CV_DCC_ADDRESSING_MODE, Value);
       break;  
     }
-    case CV_INITIAL_COLOR_CONNECTOR_1:
+    case CV_INITIAL_COLOR_CONNECTOR_1_2:
     {
-      Dcc.setCV(CV_INITIAL_COLOR_CONNECTOR_1, Value);
+      Dcc.setCV(CV_INITIAL_COLOR_CONNECTOR_1_2, Value);
       break;
     }
-    case CV_INITIAL_COLOR_CONNECTOR_2:
+    case CV_INITIAL_COLOR_CONNECTOR_3_4:
     {
-      Dcc.setCV(CV_INITIAL_COLOR_CONNECTOR_2, Value);
+      Dcc.setCV(CV_INITIAL_COLOR_CONNECTOR_3_4, Value);
       break;
     }
-    case CV_INITIAL_COLOR_CONNECTOR_3:
+    case CV_BLINKING_CONNECTOR_1:
     {
-      Dcc.setCV(CV_INITIAL_COLOR_CONNECTOR_3, Value);
+      Dcc.setCV(CV_BLINKING_CONNECTOR_1, Value);
       break;
     }
-    case CV_INITIAL_COLOR_CONNECTOR_4:
+    case CV_BLINKING_CONNECTOR_2:
     {
-      Dcc.setCV(CV_INITIAL_COLOR_CONNECTOR_4, Value);
+      Dcc.setCV(CV_BLINKING_CONNECTOR_2, Value);
       break;
     }
+    case CV_BLINKING_CONNECTOR_3:
+    {
+      Dcc.setCV(CV_BLINKING_CONNECTOR_3, Value);
+      break;
+    }
+    case CV_BLINKING_CONNECTOR_4:
+    {
+      Dcc.setCV(CV_BLINKING_CONNECTOR_4, Value);
+      break;
+    }
+  }
+
+  uint8_t effect_connector_1 = Dcc.getCV(CV_BLINKING_CONNECTOR_1);
+  uint8_t effect_connector_2 = Dcc.getCV(CV_BLINKING_CONNECTOR_2);
+  uint8_t effect_connector_3 = Dcc.getCV(CV_BLINKING_CONNECTOR_3);
+  uint8_t effect_connector_4 = Dcc.getCV(CV_BLINKING_CONNECTOR_4);
+  Timer1.detachInterrupt();
+  if (effect_connector_1 & 0xFF || effect_connector_2 & 0xFF || effect_connector_3 & 0xFF || effect_connector_4 & 0xFF)
+  {
+    Timer1.attachInterrupt(BlinkColors);
   }
 }
 
@@ -589,157 +1094,14 @@ void notifyCVResetFactoryDefault()
   Dcc.setCV(CV_DCC_BOARD_ADDRESS_2, DEFAULT_VALUE_BOARD_ADDRESS_2);
   Dcc.setCV(CV_DCC_ADDRESSING_MODE, AddressingMode::Pada);
 
-  Dcc.setCV(CV_INITIAL_COLOR_CONNECTOR_1, Colour::None);
-  Dcc.setCV(CV_INITIAL_COLOR_CONNECTOR_2, Colour::None);
-  Dcc.setCV(CV_INITIAL_COLOR_CONNECTOR_3, Colour::None);
-  Dcc.setCV(CV_INITIAL_COLOR_CONNECTOR_4, Colour::None);
+  Dcc.setCV(CV_INITIAL_COLOR_CONNECTOR_1_2, DEFAULT_VALUE_COLOR_CONNECTOR_1_2);
+  Dcc.setCV(CV_INITIAL_COLOR_CONNECTOR_3_4, DEFAULT_VALUE_COLOR_CONNECTOR_3_4);
+
+  Dcc.setCV(CV_BLINKING_CONNECTOR_1, DEFAULT_VALUE_BLINKING_CONNECTOR_1);
+  Dcc.setCV(CV_BLINKING_CONNECTOR_2, DEFAULT_VALUE_BLINKING_CONNECTOR_2);
+  Dcc.setCV(CV_BLINKING_CONNECTOR_3, DEFAULT_VALUE_BLINKING_CONNECTOR_3);
+  Dcc.setCV(CV_BLINKING_CONNECTOR_4, DEFAULT_VALUE_BLINKING_CONNECTOR_4);
 }
-
-/* Coomented out because it does not work.
-void SetInitialColour()
-{
-  int colourValue_connector_1 = Dcc.getCV(CV_INITIAL_COLOR_CONNECTOR_1);
-  int colourValue_connector_2 = Dcc.getCV(CV_INITIAL_COLOR_CONNECTOR_2);
-  int colourValue_connector_3 = Dcc.getCV(CV_INITIAL_COLOR_CONNECTOR_3);
-  int colourValue_connector_4 = Dcc.getCV(CV_INITIAL_COLOR_CONNECTOR_4);
-#ifdef DEBUG_DCC
-  String colour_str_1(ColourToString(colourValue_connector_1));
-  String colour_str_2(ColourToString(colourValue_connector_2));
-  String colour_str_3(ColourToString(colourValue_connector_3));
-  String colour_str_4(ColourToString(colourValue_connector_4));
-  Serial.println("--------------------");
-  Serial.println("SetInitialColour");
-  Serial.println("Colour Connecor 1: " + colour_str_1);
-  Serial.println("Colour Connecor 2: " + colour_str_2);
-  Serial.println("Colour Connecor 3: " + colour_str_3);
-  Serial.println("Colour Connecor 4: " + colour_str_4);
-  Serial.println("--------------------");
-#endif
-
-  switch(colourValue_connector_1)
-  {
-    case Colour::None:
-      {
-        TurnOnColor(Connector::One, Colour::None);
-        break;
-      }
-    case Colour::Red:
-    {
-       TurnOnColor(Connector::One, Colour::Red);
-       break;
-    }
-    case Colour::Green:
-    {
-      TurnOnColor(Connector::One, Colour::Green);
-      break;
-    }
-    case Colour::Yellow:
-    {
-      TurnOnColor(Connector::One, Colour::Yellow);
-      break;
-    }
-    case Colour::Orange:
-    {
-      TurnOnColor(Connector::One, Colour::Orange);
-      break;
-    }
-    default:
-      break;
-  }
-
-  switch(colourValue_connector_2)
-  {
-    case Colour::None:
-    {
-      TurnOnColor(Connector::Two, Colour::None);
-      break;
-    }
-    case Colour::Red:
-    {
-       TurnOnColor(Connector::Two, Colour::Red);
-       break;
-    }
-    case Colour::Green:
-    {
-      TurnOnColor(Connector::Two, Colour::Green);
-      break;
-    }
-    case Colour::Yellow:
-    {
-      TurnOnColor(Connector::Two, Colour::Yellow);
-      break;
-    }
-    case Colour::Orange:
-    {
-      TurnOnColor(Connector::Two, Colour::Orange);
-      break;
-    }
-    default:
-      break;
-  }
-
-  switch(colourValue_connector_3)
-  {
-    case Colour::None:
-    {
-      TurnOnColor(Connector::Three, Colour::None);
-      break;
-    }
-    case Colour::Red:
-    {
-       TurnOnColor(Connector::Three, Colour::Red);
-       break;
-    }
-    case Colour::Green:
-    {
-      TurnOnColor(Connector::Three, Colour::Green);
-      break;
-    }
-    case Colour::Yellow:
-    {
-      TurnOnColor(Connector::Three, Colour::Yellow);
-      break;
-    }
-    case Colour::Orange:
-    {
-      TurnOnColor(Connector::Three, Colour::Orange);
-      break;
-    }
-    default:
-      break;
-  }
-
-  switch(colourValue_connector_4)
-  {
-    case Colour::None:
-    {
-      TurnOnColor(Connector::Four, Colour::None);
-      break;
-    }
-    case Colour::Red:
-    {
-       TurnOnColor(Connector::Four, Colour::Red);
-       break;
-    }
-    case Colour::Green:
-    {
-      TurnOnColor(Connector::Four, Colour::Green);
-      break;
-    }
-    case Colour::Yellow:
-    {
-      TurnOnColor(Connector::Four, Colour::Yellow);
-      break;
-    }
-    case Colour::Orange:
-    {
-      TurnOnColor(Connector::Four, Colour::Orange);
-      break;
-    }
-    default:
-      break;
-  }
-}*/
 
 void setup() 
 {
@@ -781,6 +1143,9 @@ void setup()
   TurnOnColor(Connector::Two, Colour::None);
   TurnOnColor(Connector::Three, Colour::None);
   TurnOnColor(Connector::Four, Colour::None);
+
+  // init Timer1 library
+  Timer1.initialize(5000000);
 }
 
 void loop()
