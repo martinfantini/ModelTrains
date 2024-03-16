@@ -59,11 +59,14 @@
 #define CV_BLINKING_CONNECTOR_3 46
 #define CV_BLINKING_CONNECTOR_4 47
 
+//define the blinking frecuency in seconds
+#define CV_BLINKING_FREQUENCY 48
+
 /*----------------------------------------------------*/
 // Default values for each CV
 // Default values for address
-#define DEFAULT_VALUE_BOARD_ADDRESS_1 37
-#define DEFAULT_VALUE_BOARD_ADDRESS_2 38
+#define DEFAULT_VALUE_BOARD_ADDRESS_1 40
+#define DEFAULT_VALUE_BOARD_ADDRESS_2 41
 
 // Default values for initial colors
 #define DEFAULT_VALUE_COLOR_CONNECTOR_1_2 0
@@ -74,6 +77,8 @@
 #define DEFAULT_VALUE_BLINKING_CONNECTOR_2 0
 #define DEFAULT_VALUE_BLINKING_CONNECTOR_3 0
 #define DEFAULT_VALUE_BLINKING_CONNECTOR_4 0
+
+#define DEFAULT_VALUE_BLINKING_FREQUENCY 1
 
 /*----------------------------------------------------*/
 /*Char to store the effect, initially no effect*/
@@ -568,6 +573,9 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
 
 void BlinkColors()
 {
+  if (!control_effect_1_2 && !control_effect_3_4)
+    return;
+
   if (control_effect_1_2 & READ_POS_4)
   {
     ToggleColorPin(CON_1_PIN_R);
@@ -664,25 +672,26 @@ void EnableEffect(uint8_t conn, uint8_t col)
       {
           case Colour::Red:
           {
-            control_effect_1_2 |= READ_POS_4;
+            control_effect_1_2 = control_effect_1_2 | READ_POS_4;
             break;
           }
           case Colour::Green:
           {
-            control_effect_1_2 |= READ_POS_5;
+            control_effect_1_2 = control_effect_1_2 | READ_POS_5;
             break;
           }
           case Colour::Yellow:
           {
-            control_effect_1_2 |= READ_POS_6;
+            control_effect_1_2 = control_effect_1_2 | READ_POS_6;
             break;
           }
           case Colour::Orange:
           {
-            control_effect_1_2 |= READ_POS_7;
+            control_effect_1_2 = control_effect_1_2 | READ_POS_7;
             break;
           }
       }
+      break;
     }
     case Connector::Two:
     {
@@ -690,25 +699,26 @@ void EnableEffect(uint8_t conn, uint8_t col)
       {
           case Colour::Red:
           {
-            control_effect_1_2 |= READ_POS_0;
+            control_effect_1_2 = control_effect_1_2 | READ_POS_0;
             break;
           }
           case Colour::Green:
           {
-            control_effect_1_2 |= READ_POS_1;
+            control_effect_1_2 = control_effect_1_2 | READ_POS_1;
             break;
           }
           case Colour::Yellow:
           {
-            control_effect_1_2 |= READ_POS_2;
+            control_effect_1_2 = control_effect_1_2 | READ_POS_2;
             break;
           }
           case Colour::Orange:
           {
-            control_effect_1_2 |= READ_POS_3;
+            control_effect_1_2 = control_effect_1_2 | READ_POS_3;
             break;
           }
       }
+      break;
     }
     case Connector::Three:
     {
@@ -716,25 +726,26 @@ void EnableEffect(uint8_t conn, uint8_t col)
       {
           case Colour::Red:
           {
-            control_effect_3_4 |= READ_POS_4;
+            control_effect_3_4 = control_effect_3_4 | READ_POS_4;
             break;
           }
           case Colour::Green:
           {
-            control_effect_3_4 |= READ_POS_5;
+            control_effect_3_4 = control_effect_3_4 | READ_POS_5;
             break;
           }
           case Colour::Yellow:
           {
-            control_effect_3_4 |= READ_POS_6;
+            control_effect_3_4 = control_effect_3_4 | READ_POS_6;
             break;
           }
           case Colour::Orange:
           {
-            control_effect_3_4 |= READ_POS_7;
+            control_effect_3_4 = control_effect_3_4 | READ_POS_7;
             break;
           }
       }
+      break;
     }
     case Connector::Four:
     {
@@ -742,28 +753,36 @@ void EnableEffect(uint8_t conn, uint8_t col)
       {
           case Colour::Red:
           {
-            control_effect_3_4 |= READ_POS_0;
+            control_effect_3_4 = control_effect_3_4 | READ_POS_0;
             break;
           }
           case Colour::Green:
           {
-            control_effect_3_4 |= READ_POS_1;
+            control_effect_3_4 = control_effect_3_4 | READ_POS_1;
             break;
           }
           case Colour::Yellow:
           {
-            control_effect_3_4 |= READ_POS_2;
+            control_effect_3_4 = control_effect_3_4 | READ_POS_2;
             break;
           }
           case Colour::Orange:
           {
-            control_effect_3_4 |= READ_POS_3;
+            control_effect_3_4 = control_effect_3_4 | READ_POS_3;
             break;
           }
       }
+      break;
     }
   }
   interrupts();
+#ifdef DEBUG_DCC
+    Serial.println("--------------------");
+    Serial.println("EnableEffect");
+    Serial.print("control_effect_1_2: "); Serial.println(control_effect_1_2,HEX);
+    Serial.print("control_effect_3_4: "); Serial.println(control_effect_3_4,HEX);
+    Serial.println("--------------------");
+#endif  
 }
 
 void TurnOnColor(uint8_t conn, uint8_t col)
@@ -777,11 +796,12 @@ void TurnOnColor(uint8_t conn, uint8_t col)
     Serial.print("Color: "); Serial.println(colour_str);
     Serial.println("--------------------");
 #endif
+  noInterrupts();
   switch(conn)
   {
     case Connector::One:
     {
-      control_effect_1_2 &= 0x0F;
+      control_effect_1_2 = control_effect_1_2 & 0x0F;
       switch(col)
       {
           case Colour::None:
@@ -790,7 +810,7 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_1_PIN_G, HIGH);
             TurnColorPin(CON_1_PIN_Y, HIGH);
             TurnColorPin(CON_1_PIN_O, HIGH);
-            return;
+            break;
           }
           case Colour::Red:
           {
@@ -798,7 +818,7 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_1_PIN_G, HIGH);
             TurnColorPin(CON_1_PIN_Y, HIGH);
             TurnColorPin(CON_1_PIN_O, HIGH);
-            return;
+            break;
           }
           case Colour::Green:
           {
@@ -806,7 +826,7 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_1_PIN_G, LOW);
             TurnColorPin(CON_1_PIN_Y, HIGH);
             TurnColorPin(CON_1_PIN_O, HIGH);
-            return;
+            break;
           }
           case Colour::Yellow:
           {
@@ -814,7 +834,7 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_1_PIN_G, HIGH);
             TurnColorPin(CON_1_PIN_Y, LOW);
             TurnColorPin(CON_1_PIN_O, HIGH);
-            return;
+            break;
           }
           case Colour::Orange:
           {
@@ -822,14 +842,14 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_1_PIN_G, HIGH);
             TurnColorPin(CON_1_PIN_Y, HIGH);
             TurnColorPin(CON_1_PIN_O, LOW);
-            return;
+            break;
           }
       }
-      return;
+      break;
     }
     case Connector::Two:
     {
-      control_effect_1_2 &= 0xF0;
+      control_effect_1_2 = control_effect_1_2 & 0xF0;
       switch(col)
       {
           case Colour::None:
@@ -838,7 +858,7 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_2_PIN_G, HIGH);
             TurnColorPin(CON_2_PIN_Y, HIGH);
             TurnColorPin(CON_2_PIN_O, HIGH);
-            return;
+            break;
           }
           case Colour::Red:
           {
@@ -846,7 +866,7 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_2_PIN_G, HIGH);
             TurnColorPin(CON_2_PIN_Y, HIGH);
             TurnColorPin(CON_2_PIN_O, HIGH);
-            return;
+            break;
           }
           case Colour::Green:
           {
@@ -854,7 +874,7 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_2_PIN_G, LOW);
             TurnColorPin(CON_2_PIN_Y, HIGH);
             TurnColorPin(CON_2_PIN_O, HIGH);
-            return;
+            break;
           }
           case Colour::Yellow:
           {
@@ -862,7 +882,7 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_2_PIN_G, HIGH);
             TurnColorPin(CON_2_PIN_Y, LOW);
             TurnColorPin(CON_2_PIN_O, HIGH);
-            return;
+            break;
           }
           case Colour::Orange:
           {
@@ -870,14 +890,14 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_2_PIN_G, HIGH);
             TurnColorPin(CON_2_PIN_Y, HIGH);
             TurnColorPin(CON_2_PIN_O, LOW);
-            return;
+            break;
           }
       }
-      return;
+      break;
     }
     case Connector::Three:
     {
-      control_effect_3_4 &= 0xF0;
+      control_effect_3_4 = control_effect_3_4 & 0xF0;
       switch(col)
       {
           case Colour::None:
@@ -886,7 +906,7 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_3_PIN_G, HIGH);
             TurnColorPin(CON_3_PIN_Y, HIGH);
             TurnColorPin(CON_3_PIN_O, HIGH);
-            return;
+            break;
           }        
           case Colour::Red:
           {
@@ -894,7 +914,7 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_3_PIN_G, HIGH);
             TurnColorPin(CON_3_PIN_Y, HIGH);
             TurnColorPin(CON_3_PIN_O, HIGH);
-            return;
+            break;
           }
           case Colour::Green:
           {
@@ -902,7 +922,7 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_3_PIN_G, LOW);
             TurnColorPin(CON_3_PIN_Y, HIGH);
             TurnColorPin(CON_3_PIN_O, HIGH);
-            return;
+            break;
           }
           case Colour::Yellow:
           {
@@ -910,7 +930,7 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_3_PIN_G, HIGH);
             TurnColorPin(CON_3_PIN_Y, LOW);
             TurnColorPin(CON_3_PIN_O, HIGH);
-            return;
+            break;
           }
           case Colour::Orange:
           {
@@ -918,14 +938,14 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_3_PIN_G, HIGH);
             TurnColorPin(CON_3_PIN_Y, HIGH);
             TurnColorPin(CON_3_PIN_O, LOW);
-            return;
+            break;
           }
-      }     
-      return;
+      }
+      break;
     }
     case Connector::Four:
     {
-      control_effect_3_4 &= 0x0F;
+      control_effect_3_4 = control_effect_3_4 & 0x0F;
       switch(col)
       {
           case Colour::None:
@@ -934,7 +954,7 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_4_PIN_G, HIGH);
             TurnColorPin(CON_4_PIN_Y, HIGH);
             TurnColorPin(CON_4_PIN_O, HIGH);
-            return;
+            break;
           }        
           case Colour::Red:
           {
@@ -942,7 +962,7 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_4_PIN_G, HIGH);
             TurnColorPin(CON_4_PIN_Y, HIGH);
             TurnColorPin(CON_4_PIN_O, HIGH);
-            return;
+            break;
           }
           case Colour::Green:
           {
@@ -950,7 +970,7 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_4_PIN_G, LOW);
             TurnColorPin(CON_4_PIN_Y, HIGH);
             TurnColorPin(CON_4_PIN_O, HIGH);
-            return;
+            break;
           }
           case Colour::Yellow:
           {
@@ -958,7 +978,7 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_4_PIN_G, HIGH);
             TurnColorPin(CON_4_PIN_Y, LOW);
             TurnColorPin(CON_4_PIN_O, HIGH);
-            return;
+            break;
           }
           case Colour::Orange:
           {
@@ -966,12 +986,13 @@ void TurnOnColor(uint8_t conn, uint8_t col)
             TurnColorPin(CON_4_PIN_G, HIGH);
             TurnColorPin(CON_4_PIN_Y, HIGH);
             TurnColorPin(CON_4_PIN_O, LOW);
-            return;
+            break;
           }
       }
-      return;
+      break;
     }
   }
+  interrupts();
 }
 
 void TurnColorPin(uint8_t pin, bool value)
@@ -1051,16 +1072,11 @@ void notifyCVChange(uint16_t CV, uint8_t Value)
       Dcc.setCV(CV_BLINKING_CONNECTOR_4, Value);
       break;
     }
-  }
-
-  uint8_t effect_connector_1 = Dcc.getCV(CV_BLINKING_CONNECTOR_1);
-  uint8_t effect_connector_2 = Dcc.getCV(CV_BLINKING_CONNECTOR_2);
-  uint8_t effect_connector_3 = Dcc.getCV(CV_BLINKING_CONNECTOR_3);
-  uint8_t effect_connector_4 = Dcc.getCV(CV_BLINKING_CONNECTOR_4);
-  Timer1.detachInterrupt();
-  if (effect_connector_1 & 0xFF || effect_connector_2 & 0xFF || effect_connector_3 & 0xFF || effect_connector_4 & 0xFF)
-  {
-    Timer1.attachInterrupt(BlinkColors);
+    case CV_BLINKING_FREQUENCY:
+    {
+      Dcc.setCV(CV_BLINKING_FREQUENCY, Value);
+      break;
+    }
   }
 }
 
@@ -1101,6 +1117,102 @@ void notifyCVResetFactoryDefault()
   Dcc.setCV(CV_BLINKING_CONNECTOR_2, DEFAULT_VALUE_BLINKING_CONNECTOR_2);
   Dcc.setCV(CV_BLINKING_CONNECTOR_3, DEFAULT_VALUE_BLINKING_CONNECTOR_3);
   Dcc.setCV(CV_BLINKING_CONNECTOR_4, DEFAULT_VALUE_BLINKING_CONNECTOR_4);
+
+  Dcc.setCV(CV_BLINKING_FREQUENCY, DEFAULT_VALUE_BLINKING_FREQUENCY);
+}
+
+void InitialColors()
+{
+  TurnOnColor(Connector::One, Colour::None);
+  TurnOnColor(Connector::Two, Colour::None);
+  TurnOnColor(Connector::Three, Colour::None);
+  TurnOnColor(Connector::Four, Colour::None);
+
+  uint8_t initial_colors_1_2 = Dcc.getCV(CV_INITIAL_COLOR_CONNECTOR_1_2);
+  uint8_t initial_colors_3_4 = Dcc.getCV(CV_INITIAL_COLOR_CONNECTOR_3_4);
+
+#ifdef DEBUG_DCC
+    Serial.println("--------------------");
+    Serial.println("InitialColors");
+    Serial.print("initial_colors_1_2: "); Serial.println(initial_colors_1_2,HEX);
+    Serial.print("initial_colors_3_4: "); Serial.println(initial_colors_3_4,HEX);
+    Serial.println("--------------------");
+#endif
+  
+  if (!initial_colors_1_2 && !initial_colors_3_4)
+    return;
+
+  // Connector::One
+  if(initial_colors_1_2 & READ_POS_4)
+  {
+    TurnOnColor(Connector::One, Colour::Red);
+  }
+  if(initial_colors_1_2 & READ_POS_5)
+  {
+    TurnOnColor(Connector::One, Colour::Green);
+  }
+  if(initial_colors_1_2 & READ_POS_6)
+  {
+    TurnOnColor(Connector::One, Colour::Yellow);
+  }
+  if(initial_colors_1_2 & READ_POS_7)
+  {
+    TurnOnColor(Connector::One, Colour::Orange);
+  }
+
+  // Connector::Two
+  if(initial_colors_1_2 & READ_POS_0)
+  {
+    TurnOnColor(Connector::Two, Colour::Red);
+  }
+  if(initial_colors_1_2 & READ_POS_1)
+  {
+    TurnOnColor(Connector::Two, Colour::Green);
+  }    
+  if(initial_colors_1_2 & READ_POS_2)
+  {
+    TurnOnColor(Connector::Two, Colour::Yellow);
+  }
+  if(initial_colors_1_2 & READ_POS_3)
+  {
+    TurnOnColor(Connector::Two, Colour::Orange);
+  }
+
+  // Connector::Three
+  if(initial_colors_3_4 & READ_POS_4)
+  {
+    TurnOnColor(Connector::Three, Colour::Red);
+  }
+  if(initial_colors_3_4 & READ_POS_5)
+  {
+    TurnOnColor(Connector::Three, Colour::Green);
+  }
+  if(initial_colors_3_4 & READ_POS_6)
+  {
+    TurnOnColor(Connector::Three, Colour::Yellow);
+  }
+  if(initial_colors_3_4 & READ_POS_7)
+  {
+    TurnOnColor(Connector::Three, Colour::Orange);
+  }
+
+  // Connector::Four
+  if(initial_colors_3_4 & READ_POS_0)
+  {
+    TurnOnColor(Connector::Four, Colour::Red);
+  }
+  if(initial_colors_3_4 & READ_POS_1)
+  {
+    TurnOnColor(Connector::Four, Colour::Green);
+  }    
+  if(initial_colors_3_4 & READ_POS_2)
+  {
+    TurnOnColor(Connector::Four, Colour::Yellow);
+  }
+  if(initial_colors_3_4 & READ_POS_3)
+  {
+    TurnOnColor(Connector::Four, Colour::Orange);
+  } 
 }
 
 void setup() 
@@ -1139,13 +1251,12 @@ void setup()
   Dcc.pin(digitalPinToInterrupt(DCC_PIN_IN), DCC_PIN_IN, false);
   Dcc.init(MAN_ID_DIY, 1, FLAGS_DCC_ACCESSORY_DECODER | FLAGS_OUTPUT_ADDRESS_MODE, 0);
 
-  TurnOnColor(Connector::One, Colour::None);
-  TurnOnColor(Connector::Two, Colour::None);
-  TurnOnColor(Connector::Three, Colour::None);
-  TurnOnColor(Connector::Four, Colour::None);
+  InitialColors();
 
   // init Timer1 library
-  Timer1.initialize(5000000);
+  uint8_t frecuency = Dcc.getCV(CV_BLINKING_FREQUENCY);
+  Timer1.initialize(frecuency * 1000000);
+  Timer1.attachInterrupt(BlinkColors);
 }
 
 void loop()
