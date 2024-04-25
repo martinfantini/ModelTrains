@@ -3,7 +3,7 @@
 #include <EEPROM.h>
 #include <TimerOne.h>
 
-#define DEBUG_DCC
+//#define DEBUG_DCC
 
 //DCC Signal
 #define DCC_ACK_SIGNAL 3  // Pin 5 - PD3
@@ -59,14 +59,27 @@
 #define CV_BLINKING_CONNECTOR_3 46
 #define CV_BLINKING_CONNECTOR_4 47
 
-//define the blinking frecuency in seconds
+// define the blinking frequency in seconds
 #define CV_BLINKING_FREQUENCY 48
+
+// define which goes on
+#define CV_CONNECTOR_1_COMMAND_1_2 49
+#define CV_CONNECTOR_1_COMMAND_3_4 50
+
+#define CV_CONNECTOR_2_COMMAND_1_2 51
+#define CV_CONNECTOR_2_COMMAND_3_4 52
+
+#define CV_CONNECTOR_3_COMMAND_1_2 53
+#define CV_CONNECTOR_3_COMMAND_3_4 54
+
+#define CV_CONNECTOR_4_COMMAND_1_2 55
+#define CV_CONNECTOR_4_COMMAND_3_4 56
 
 /*----------------------------------------------------*/
 // Default values for each CV
 // Default values for address
-#define DEFAULT_VALUE_BOARD_ADDRESS_1 40
-#define DEFAULT_VALUE_BOARD_ADDRESS_2 41
+#define DEFAULT_VALUE_BOARD_ADDRESS_1 31
+#define DEFAULT_VALUE_BOARD_ADDRESS_2 32
 
 // Default values for initial colors
 #define DEFAULT_VALUE_COLOR_CONNECTOR_1_2 0
@@ -79,6 +92,26 @@
 #define DEFAULT_VALUE_BLINKING_CONNECTOR_4 0
 
 #define DEFAULT_VALUE_BLINKING_FREQUENCY 1
+
+// Default connector values
+// 1: RGY0 XXXX
+// 2: XXXX RGY0
+// DEFAULT_CONNECTOR_X_COMMAND_1_2 = 1000 0100 = 132
+// 4: RGY0 XXXX
+// 3: XXXX RGY0
+// DEFAULT_CONNECTOR_X_COMMAND_3_4 = 0010 0001 = 33
+
+#define DEFAULT_CONNECTOR_1_COMMAND_1_2 132
+#define DEFAULT_CONNECTOR_1_COMMAND_3_4 33
+
+#define DEFAULT_CONNECTOR_2_COMMAND_1_2 132
+#define DEFAULT_CONNECTOR_2_COMMAND_3_4 33
+
+#define DEFAULT_CONNECTOR_3_COMMAND_1_2 132
+#define DEFAULT_CONNECTOR_3_COMMAND_3_4 33
+
+#define DEFAULT_CONNECTOR_4_COMMAND_1_2 132
+#define DEFAULT_CONNECTOR_4_COMMAND_3_4 33
 
 /*----------------------------------------------------*/
 /*Char to store the effect, initially no effect*/
@@ -167,6 +200,9 @@ String ConnectorToString(uint8_t con)
 #define READ_POS_6 0x40
 #define READ_POS_7 0x80
 
+#define READ_HIGH 0xF0
+#define READ_LOW  0x0F
+
 NmraDcc Dcc;
 
 void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, uint8_t State) 
@@ -196,7 +232,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
       Serial.print("Out Pair: "); Serial.println(outputInPair);
       Serial.println("--------------------");
     #endif
-    
+
     // check if the command is for our address and output
     if(BoardAddr == boardAddress_1)
     {
@@ -206,11 +242,15 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
         case 2:
         {
           uint8_t effect_connector = Dcc.getCV(CV_BLINKING_CONNECTOR_1);
+
           if(pairAddress == 1)
           {
+            uint8_t on_connector_1_port_1_2 = Dcc.getCV(CV_CONNECTOR_1_COMMAND_1_2);
             if (outputInPair == 0)
             {
-              TurnOnColor(Connector::One, Colour::Red);
+              TurnOnColor(Connector::One, Colour::None);
+              TurnOnColorFilter(on_connector_1_port_1_2 & READ_HIGH, Connector::One);
+              // Here is the blick efect
               if (effect_connector & READ_POS_4)
               {
                 if (effect_connector & READ_POS_1)
@@ -229,7 +269,9 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
             }
             else
             {
-              TurnOnColor(Connector::One, Colour::Green);
+              TurnOnColor(Connector::One, Colour::None);
+              TurnOnColorFilter(on_connector_1_port_1_2 & READ_LOW, Connector::One);
+              // Here is the blink effect
               if (effect_connector & READ_POS_5)
               {
                 if (effect_connector & READ_POS_0)
@@ -250,9 +292,12 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
           }
           else
           {
+            uint8_t on_connector_1_port_3_4 = Dcc.getCV(CV_CONNECTOR_1_COMMAND_3_4);
             if (outputInPair == 0)
             {
-              TurnOnColor(Connector::One, Colour::Yellow);
+              TurnOnColor(Connector::One, Colour::None);
+              TurnOnColorFilter(on_connector_1_port_3_4 & READ_HIGH, Connector::One);
+              // Here is the blink effect
               if (effect_connector & READ_POS_6)
               {
                 if (effect_connector & READ_POS_0)
@@ -271,7 +316,9 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
             }
             else
             {
-              TurnOnColor(Connector::One, Colour::Orange);
+              TurnOnColor(Connector::One, Colour::None);
+              TurnOnColorFilter(on_connector_1_port_3_4 & READ_LOW, Connector::One);
+              // Here is the blink effect
               if (effect_connector & READ_POS_7)
               {
                 if (effect_connector & READ_POS_0)
@@ -297,9 +344,12 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
           uint8_t effect_connector = Dcc.getCV(CV_BLINKING_CONNECTOR_2);
           if(pairAddress == 3)
           {
+            uint8_t on_connector_2_port_1_2 = Dcc.getCV(CV_CONNECTOR_2_COMMAND_1_2);
             if (outputInPair == 0)
             {
-              TurnOnColor(Connector::Two, Colour::Red);
+              TurnOnColor(Connector::Two, Colour::None);
+              TurnOnColorFilter(on_connector_2_port_1_2 & READ_HIGH, Connector::Two);
+              // Here is the blink effect
               if (effect_connector & READ_POS_4)
               {
                 if (effect_connector & READ_POS_1)
@@ -318,7 +368,9 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
             }
             else
             {
-              TurnOnColor(Connector::Two, Colour::Green);
+              TurnOnColor(Connector::Two, Colour::None);
+              TurnOnColorFilter(on_connector_2_port_1_2 & READ_LOW, Connector::Two);
+              // Here is the blink effect
               if (effect_connector & READ_POS_5)
               {
                 if (effect_connector & READ_POS_0)
@@ -339,9 +391,12 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
           }
           else
           {
+            uint8_t on_connector_2_port_3_4 = Dcc.getCV(CV_CONNECTOR_2_COMMAND_3_4);
             if (outputInPair == 0)
             {
-              TurnOnColor(Connector::Two, Colour::Yellow);
+              TurnOnColor(Connector::Two, Colour::None);
+              TurnOnColorFilter(on_connector_2_port_3_4 & READ_HIGH, Connector::Two);
+              // Here is the blink effect
               if (effect_connector & READ_POS_6)
               {
                 if (effect_connector & READ_POS_0)
@@ -360,7 +415,9 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
             }
             else
             {
-              TurnOnColor(Connector::Two, Colour::Orange);
+              TurnOnColor(Connector::Two, Colour::None);
+              TurnOnColorFilter(on_connector_2_port_3_4 & READ_LOW, Connector::Two);
+              // Here is the blink effect
               if (effect_connector & READ_POS_7)
               {
                 if (effect_connector & READ_POS_0)
@@ -382,7 +439,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
         }
       }
     } // BoardAddr
-     
+
     // check if the command is for our address and output
     if(BoardAddr == boardAddress_2)
     {
@@ -394,9 +451,12 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
           uint8_t effect_connector = Dcc.getCV(CV_BLINKING_CONNECTOR_3);
           if(pairAddress == 1)
           {
+            uint8_t on_connector_3_port_1_2 = Dcc.getCV(CV_CONNECTOR_3_COMMAND_1_2);
             if (outputInPair == 0)
             {
-              TurnOnColor(Connector::Three, Colour::Red);
+              TurnOnColor(Connector::Three, Colour::None);
+              TurnOnColorFilter(on_connector_3_port_1_2 & READ_HIGH, Connector::Three);
+              // Here is the blick efect
               if (effect_connector & READ_POS_4)
               {
                 if (effect_connector & READ_POS_1)
@@ -415,7 +475,9 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
             }
             else
             {
-              TurnOnColor(Connector::Three, Colour::Green);
+              TurnOnColor(Connector::Three, Colour::None);
+              TurnOnColorFilter(on_connector_3_port_1_2 & READ_LOW, Connector::Three);
+              // Here is the blick efect
               if (effect_connector & READ_POS_5)
               {
                 if (effect_connector & READ_POS_0)
@@ -436,9 +498,12 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
           }
           else
           {
+            uint8_t on_connector_3_port_3_4 = Dcc.getCV(CV_CONNECTOR_3_COMMAND_3_4);
             if (outputInPair == 0)
             {
-              TurnOnColor(Connector::Three, Colour::Yellow);
+              TurnOnColor(Connector::Three, Colour::None);
+              TurnOnColorFilter(on_connector_3_port_3_4 & READ_HIGH, Connector::Three);
+              // Here is the blick efect
               if (effect_connector & READ_POS_6)
               {
                 if (effect_connector & READ_POS_0)
@@ -457,7 +522,9 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
             }
             else
             {
-              TurnOnColor(Connector::Three, Colour::Orange);
+              TurnOnColor(Connector::Three, Colour::None);
+              TurnOnColorFilter(on_connector_3_port_3_4 & READ_LOW, Connector::Three);
+              // Here is the blick efect
               if (effect_connector & READ_POS_7)
               {
                 if (effect_connector & READ_POS_0)
@@ -483,9 +550,12 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
           uint8_t effect_connector = Dcc.getCV(CV_BLINKING_CONNECTOR_4);
           if(pairAddress == 3)
           {
+            uint8_t on_connector_4_port_1_2 = Dcc.getCV(CV_CONNECTOR_4_COMMAND_1_2);
             if (outputInPair == 0)
             {
-              TurnOnColor(Connector::Four, Colour::Red);
+              TurnOnColor(Connector::Four, Colour::None);
+              TurnOnColorFilter(on_connector_4_port_1_2 & READ_HIGH, Connector::Four);
+              // Here is the blick efect
               if (effect_connector & READ_POS_4)
               {
                 if (effect_connector & READ_POS_1)
@@ -504,7 +574,9 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
             }
             else
             {
-              TurnOnColor(Connector::Four, Colour::Green);
+              TurnOnColor(Connector::Four, Colour::None);
+              TurnOnColorFilter(on_connector_4_port_1_2 & READ_LOW, Connector::Four);
+              // Here is the blick efect
               if (effect_connector & READ_POS_5)
               {
                 if (effect_connector & READ_POS_0)
@@ -525,9 +597,12 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
           }
           else
           {
+            uint8_t on_connector_4_port_3_4 = Dcc.getCV(CV_CONNECTOR_4_COMMAND_3_4);
             if (outputInPair == 0)
             {
-              TurnOnColor(Connector::Four, Colour::Yellow);
+              TurnOnColor(Connector::Four, Colour::None);
+              TurnOnColorFilter(on_connector_4_port_3_4 & READ_HIGH, Connector::Four);
+              // Here is the blick efect
               if (effect_connector & READ_POS_6)
               {
                 if (effect_connector & READ_POS_0)
@@ -546,7 +621,9 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
             }
             else
             {
-              TurnOnColor(Connector::Four, Colour::Orange);
+              TurnOnColor(Connector::Four, Colour::None);
+              TurnOnColorFilter(on_connector_4_port_3_4 & READ_LOW, Connector::Four);
+              // Here is the blick efect
               if (effect_connector & READ_POS_7)
               {
                 if (effect_connector & READ_POS_0)
@@ -641,16 +718,6 @@ void BlinkColors()
     ToggleColorPin(CON_4_PIN_O);
   }
 }
-
-#define READ_POS_0 0x01
-#define READ_POS_1 0x02
-#define READ_POS_2 0x04
-#define READ_POS_3 0x08
-
-#define READ_POS_4 0x10
-#define READ_POS_5 0x20
-#define READ_POS_6 0x40
-#define READ_POS_7 0x80
 
 void EnableEffect(uint8_t conn, uint8_t col)
 {
@@ -815,32 +882,20 @@ void TurnOnColor(uint8_t conn, uint8_t col)
           case Colour::Red:
           {
             TurnColorPin(CON_1_PIN_R, LOW);
-            TurnColorPin(CON_1_PIN_G, HIGH);
-            TurnColorPin(CON_1_PIN_Y, HIGH);
-            TurnColorPin(CON_1_PIN_O, HIGH);
             break;
           }
           case Colour::Green:
           {
-            TurnColorPin(CON_1_PIN_R, HIGH);
             TurnColorPin(CON_1_PIN_G, LOW);
-            TurnColorPin(CON_1_PIN_Y, HIGH);
-            TurnColorPin(CON_1_PIN_O, HIGH);
             break;
           }
           case Colour::Yellow:
           {
-            TurnColorPin(CON_1_PIN_R, HIGH);
-            TurnColorPin(CON_1_PIN_G, HIGH);
             TurnColorPin(CON_1_PIN_Y, LOW);
-            TurnColorPin(CON_1_PIN_O, HIGH);
             break;
           }
           case Colour::Orange:
           {
-            TurnColorPin(CON_1_PIN_R, HIGH);
-            TurnColorPin(CON_1_PIN_G, HIGH);
-            TurnColorPin(CON_1_PIN_Y, HIGH);
             TurnColorPin(CON_1_PIN_O, LOW);
             break;
           }
@@ -863,32 +918,20 @@ void TurnOnColor(uint8_t conn, uint8_t col)
           case Colour::Red:
           {
             TurnColorPin(CON_2_PIN_R, LOW);
-            TurnColorPin(CON_2_PIN_G, HIGH);
-            TurnColorPin(CON_2_PIN_Y, HIGH);
-            TurnColorPin(CON_2_PIN_O, HIGH);
             break;
           }
           case Colour::Green:
           {
-            TurnColorPin(CON_2_PIN_R, HIGH);
             TurnColorPin(CON_2_PIN_G, LOW);
-            TurnColorPin(CON_2_PIN_Y, HIGH);
-            TurnColorPin(CON_2_PIN_O, HIGH);
             break;
           }
           case Colour::Yellow:
           {
-            TurnColorPin(CON_2_PIN_R, HIGH);
-            TurnColorPin(CON_2_PIN_G, HIGH);
             TurnColorPin(CON_2_PIN_Y, LOW);
-            TurnColorPin(CON_2_PIN_O, HIGH);
             break;
           }
           case Colour::Orange:
           {
-            TurnColorPin(CON_2_PIN_R, HIGH);
-            TurnColorPin(CON_2_PIN_G, HIGH);
-            TurnColorPin(CON_2_PIN_Y, HIGH);
             TurnColorPin(CON_2_PIN_O, LOW);
             break;
           }
@@ -911,32 +954,20 @@ void TurnOnColor(uint8_t conn, uint8_t col)
           case Colour::Red:
           {
             TurnColorPin(CON_3_PIN_R, LOW);
-            TurnColorPin(CON_3_PIN_G, HIGH);
-            TurnColorPin(CON_3_PIN_Y, HIGH);
-            TurnColorPin(CON_3_PIN_O, HIGH);
             break;
           }
           case Colour::Green:
           {
-            TurnColorPin(CON_3_PIN_R, HIGH);
             TurnColorPin(CON_3_PIN_G, LOW);
-            TurnColorPin(CON_3_PIN_Y, HIGH);
-            TurnColorPin(CON_3_PIN_O, HIGH);
             break;
           }
           case Colour::Yellow:
           {
-            TurnColorPin(CON_3_PIN_R, HIGH);
-            TurnColorPin(CON_3_PIN_G, HIGH);
             TurnColorPin(CON_3_PIN_Y, LOW);
-            TurnColorPin(CON_3_PIN_O, HIGH);
             break;
           }
           case Colour::Orange:
           {
-            TurnColorPin(CON_3_PIN_R, HIGH);
-            TurnColorPin(CON_3_PIN_G, HIGH);
-            TurnColorPin(CON_3_PIN_Y, HIGH);
             TurnColorPin(CON_3_PIN_O, LOW);
             break;
           }
@@ -959,32 +990,20 @@ void TurnOnColor(uint8_t conn, uint8_t col)
           case Colour::Red:
           {
             TurnColorPin(CON_4_PIN_R, LOW);
-            TurnColorPin(CON_4_PIN_G, HIGH);
-            TurnColorPin(CON_4_PIN_Y, HIGH);
-            TurnColorPin(CON_4_PIN_O, HIGH);
             break;
           }
           case Colour::Green:
           {
-            TurnColorPin(CON_4_PIN_R, HIGH);
             TurnColorPin(CON_4_PIN_G, LOW);
-            TurnColorPin(CON_4_PIN_Y, HIGH);
-            TurnColorPin(CON_4_PIN_O, HIGH);
             break;
           }
           case Colour::Yellow:
           {
-            TurnColorPin(CON_4_PIN_R, HIGH);
-            TurnColorPin(CON_4_PIN_G, HIGH);
             TurnColorPin(CON_4_PIN_Y, LOW);
-            TurnColorPin(CON_4_PIN_O, HIGH);
             break;
           }
           case Colour::Orange:
           {
-            TurnColorPin(CON_4_PIN_R, HIGH);
-            TurnColorPin(CON_4_PIN_G, HIGH);
-            TurnColorPin(CON_4_PIN_Y, HIGH);
             TurnColorPin(CON_4_PIN_O, LOW);
             break;
           }
@@ -993,6 +1012,59 @@ void TurnOnColor(uint8_t conn, uint8_t col)
     }
   }
   interrupts();
+}
+
+void TurnOnColorFilter(uint8_t filter, uint8_t connector)
+{
+#ifdef DEBUG_DCC
+    String connector_str(ConnectorToString(connector));
+    Serial.println("--------------------");
+    Serial.println("TurnOnColorFilter");
+    Serial.print("Connector: "); Serial.println(connector_str);
+    Serial.print("Filter: ");  Serial.println(filter,HEX);
+    Serial.println("--------------------");
+#endif
+
+  // high part
+  if (filter & READ_HIGH)
+  {
+      if(filter & READ_POS_7 )
+      {
+        TurnOnColor(connector, Colour::Red);
+      }
+      if(filter & READ_POS_6 )
+      {
+        TurnOnColor(connector, Colour::Green);
+      }
+      if(filter & READ_POS_5 )
+      {
+        TurnOnColor(connector, Colour::Yellow);
+      }
+      if(filter & READ_POS_4 )
+      {
+        TurnOnColor(connector, Colour::Orange);
+      }
+  }
+  // low part
+  if (filter & READ_LOW)
+  {
+      if(filter & READ_POS_7 )
+      {
+        TurnOnColor(connector, Colour::Red);
+      }
+      if(filter & READ_POS_6 )
+      {
+        TurnOnColor(connector, Colour::Green);
+      }
+      if(filter & READ_POS_5 )
+      {
+        TurnOnColor(connector, Colour::Yellow);
+      }
+      if(filter & READ_POS_4 )
+      {
+        TurnOnColor(connector, Colour::Orange);
+      }
+  }
 }
 
 void TurnColorPin(uint8_t pin, bool value)
@@ -1077,6 +1149,46 @@ void notifyCVChange(uint16_t CV, uint8_t Value)
       Dcc.setCV(CV_BLINKING_FREQUENCY, Value);
       break;
     }
+    case CV_CONNECTOR_1_COMMAND_1_2:
+    {
+      Dcc.setCV(CV_CONNECTOR_1_COMMAND_1_2, Value);
+      break;
+    }
+    case CV_CONNECTOR_1_COMMAND_3_4:
+    {
+      Dcc.setCV(CV_CONNECTOR_1_COMMAND_3_4, Value);
+      break;
+    }
+    case CV_CONNECTOR_2_COMMAND_1_2:
+    {
+      Dcc.setCV(CV_CONNECTOR_2_COMMAND_1_2, Value);
+      break;
+    }
+    case CV_CONNECTOR_2_COMMAND_3_4:
+    {
+      Dcc.setCV(CV_CONNECTOR_2_COMMAND_3_4, Value);
+      break;
+    }
+    case CV_CONNECTOR_3_COMMAND_1_2:
+    {
+      Dcc.setCV(CV_CONNECTOR_3_COMMAND_1_2, Value);
+      break;
+    }
+    case CV_CONNECTOR_3_COMMAND_3_4:
+    {
+      Dcc.setCV(CV_CONNECTOR_3_COMMAND_3_4, Value);
+      break;
+    }
+    case CV_CONNECTOR_4_COMMAND_1_2:
+    {
+      Dcc.setCV(CV_CONNECTOR_4_COMMAND_1_2, Value);
+      break;
+    }
+    case CV_CONNECTOR_4_COMMAND_3_4:
+    {
+      Dcc.setCV(CV_CONNECTOR_4_COMMAND_3_4, Value);
+      break;
+    }
   }
 }
 
@@ -1119,6 +1231,19 @@ void notifyCVResetFactoryDefault()
   Dcc.setCV(CV_BLINKING_CONNECTOR_4, DEFAULT_VALUE_BLINKING_CONNECTOR_4);
 
   Dcc.setCV(CV_BLINKING_FREQUENCY, DEFAULT_VALUE_BLINKING_FREQUENCY);
+
+  // Default values for the initial case
+  Dcc.setCV(CV_CONNECTOR_1_COMMAND_1_2, DEFAULT_CONNECTOR_1_COMMAND_1_2);
+  Dcc.setCV(CV_CONNECTOR_1_COMMAND_3_4, DEFAULT_CONNECTOR_1_COMMAND_3_4);
+
+  Dcc.setCV(CV_CONNECTOR_2_COMMAND_1_2, DEFAULT_CONNECTOR_2_COMMAND_1_2);
+  Dcc.setCV(CV_CONNECTOR_2_COMMAND_3_4, DEFAULT_CONNECTOR_2_COMMAND_3_4);
+
+  Dcc.setCV(CV_CONNECTOR_3_COMMAND_1_2, DEFAULT_CONNECTOR_3_COMMAND_1_2);
+  Dcc.setCV(CV_CONNECTOR_3_COMMAND_3_4, DEFAULT_CONNECTOR_3_COMMAND_3_4);
+
+  Dcc.setCV(CV_CONNECTOR_4_COMMAND_1_2, DEFAULT_CONNECTOR_4_COMMAND_1_2);
+  Dcc.setCV(CV_CONNECTOR_4_COMMAND_3_4, DEFAULT_CONNECTOR_4_COMMAND_3_4);
 }
 
 void InitialColors()
@@ -1138,7 +1263,7 @@ void InitialColors()
     Serial.print("initial_colors_3_4: "); Serial.println(initial_colors_3_4,HEX);
     Serial.println("--------------------");
 #endif
-  
+
   if (!initial_colors_1_2 && !initial_colors_3_4)
     return;
 
@@ -1254,8 +1379,8 @@ void setup()
   InitialColors();
 
   // init Timer1 library
-  uint8_t frecuency = Dcc.getCV(CV_BLINKING_FREQUENCY);
-  Timer1.initialize(frecuency * 1000000);
+  uint8_t frequency = Dcc.getCV(CV_BLINKING_FREQUENCY);
+  Timer1.initialize(frequency * 1000000);
   Timer1.attachInterrupt(BlinkColors);
 }
 
