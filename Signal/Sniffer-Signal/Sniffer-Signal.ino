@@ -78,8 +78,8 @@
 /*----------------------------------------------------*/
 // Default values for each CV
 // Default values for address
-#define DEFAULT_VALUE_BOARD_ADDRESS_1 31
-#define DEFAULT_VALUE_BOARD_ADDRESS_2 32
+#define DEFAULT_VALUE_BOARD_ADDRESS_1 40
+#define DEFAULT_VALUE_BOARD_ADDRESS_2 41
 
 // Default values for initial colors
 #define DEFAULT_VALUE_COLOR_CONNECTOR_1_2 0
@@ -101,17 +101,17 @@
 // 3: XXXX RGY0
 // DEFAULT_CONNECTOR_X_COMMAND_3_4 = 0010 0001 = 33
 
-#define DEFAULT_CONNECTOR_1_COMMAND_1_2 132
-#define DEFAULT_CONNECTOR_1_COMMAND_3_4 33
+#define DEFAULT_CONNECTOR_1_COMMAND_1_2 0x84
+#define DEFAULT_CONNECTOR_1_COMMAND_3_4 0x21
 
-#define DEFAULT_CONNECTOR_2_COMMAND_1_2 132
-#define DEFAULT_CONNECTOR_2_COMMAND_3_4 33
+#define DEFAULT_CONNECTOR_2_COMMAND_1_2 0x84
+#define DEFAULT_CONNECTOR_2_COMMAND_3_4 0x21
 
-#define DEFAULT_CONNECTOR_3_COMMAND_1_2 132
-#define DEFAULT_CONNECTOR_3_COMMAND_3_4 33
+#define DEFAULT_CONNECTOR_3_COMMAND_1_2 0x84
+#define DEFAULT_CONNECTOR_3_COMMAND_3_4 0x21
 
-#define DEFAULT_CONNECTOR_4_COMMAND_1_2 132
-#define DEFAULT_CONNECTOR_4_COMMAND_3_4 33
+#define DEFAULT_CONNECTOR_4_COMMAND_1_2 0x84
+#define DEFAULT_CONNECTOR_4_COMMAND_3_4 0x21
 
 /*----------------------------------------------------*/
 /*Char to store the effect, initially no effect*/
@@ -1048,19 +1048,19 @@ void TurnOnColorFilter(uint8_t filter, uint8_t connector)
   // low part
   if (filter & READ_LOW)
   {
-      if(filter & READ_POS_7 )
+      if(filter & READ_POS_3 )
       {
         TurnOnColor(connector, Colour::Red);
       }
-      if(filter & READ_POS_6 )
+      if(filter & READ_POS_2 )
       {
         TurnOnColor(connector, Colour::Green);
       }
-      if(filter & READ_POS_5 )
+      if(filter & READ_POS_1 )
       {
         TurnOnColor(connector, Colour::Yellow);
       }
-      if(filter & READ_POS_4 )
+      if(filter & READ_POS_0 )
       {
         TurnOnColor(connector, Colour::Orange);
       }
