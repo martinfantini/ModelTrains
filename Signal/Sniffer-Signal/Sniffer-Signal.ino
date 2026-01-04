@@ -86,7 +86,7 @@
 #define DEFAULT_VALUE_COLOR_CONNECTOR_3_4 0
 
 // Default effect values
-#define DEFAULT_VALUE_BLINKING_CONNECTOR_1 0
+#define DEFAULT_VALUE_BLINKING_CONNECTOR_1 0x81
 #define DEFAULT_VALUE_BLINKING_CONNECTOR_2 0
 #define DEFAULT_VALUE_BLINKING_CONNECTOR_3 0
 #define DEFAULT_VALUE_BLINKING_CONNECTOR_4 0
@@ -254,18 +254,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
               // Here is the blick efect
               if (effect_connector & READ_POS_4)
               {
-                if (effect_connector & READ_POS_1)
-                {
-                  EnableEffect(Connector::One, Colour::Green);
-                }
-                if (effect_connector & READ_POS_2)
-                {
-                  EnableEffect(Connector::One, Colour::Yellow);
-                }
-                if (effect_connector & READ_POS_3)
-                {
-                  EnableEffect(Connector::One, Colour::Orange);
-                }
+                OnEffect(Connector::One, effect_connector);
               }
             }
             else
@@ -276,18 +265,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
               // Here is the blink effect
               if (effect_connector & READ_POS_5)
               {
-                if (effect_connector & READ_POS_0)
-                {
-                  EnableEffect(Connector::One, Colour::Red);
-                }
-                if (effect_connector & READ_POS_2)
-                {
-                  EnableEffect(Connector::One, Colour::Yellow);
-                }
-                if (effect_connector & READ_POS_3)
-                {
-                  EnableEffect(Connector::One, Colour::Orange);
-                }
+                OnEffect(Connector::One, effect_connector);
               }
             }
             return;
@@ -303,18 +281,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
               // Here is the blink effect
               if (effect_connector & READ_POS_6)
               {
-                if (effect_connector & READ_POS_0)
-                {
-                  EnableEffect(Connector::One, Colour::Red);
-                }
-                if (effect_connector & READ_POS_1)
-                {
-                  EnableEffect(Connector::One, Colour::Green);
-                }
-                if (effect_connector & READ_POS_3)
-                {
-                  EnableEffect(Connector::One, Colour::Orange);
-                }
+                OnEffect(Connector::One, effect_connector);
               }
             }
             else
@@ -325,18 +292,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
               // Here is the blink effect
               if (effect_connector & READ_POS_7)
               {
-                if (effect_connector & READ_POS_0)
-                {
-                  EnableEffect(Connector::One, Colour::Red);
-                }
-                if (effect_connector & READ_POS_1)
-                {
-                  EnableEffect(Connector::One, Colour::Green);
-                }
-                if (effect_connector & READ_POS_2)
-                {
-                  EnableEffect(Connector::One, Colour::Yellow);
-                }
+                OnEffect(Connector::One, effect_connector);
               }
             }
             return;
@@ -357,18 +313,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
               // Here is the blink effect
               if (effect_connector & READ_POS_4)
               {
-                if (effect_connector & READ_POS_1)
-                {
-                  EnableEffect(Connector::Two, Colour::Green);
-                }
-                if (effect_connector & READ_POS_2)
-                {
-                  EnableEffect(Connector::Two, Colour::Yellow);
-                }
-                if (effect_connector & READ_POS_3)
-                {
-                  EnableEffect(Connector::Two, Colour::Orange);
-                }
+                OnEffect(Connector::Two, effect_connector);
               }
             }
             else
@@ -379,18 +324,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
               // Here is the blink effect
               if (effect_connector & READ_POS_5)
               {
-                if (effect_connector & READ_POS_0)
-                {
-                  EnableEffect(Connector::Two, Colour::Red);
-                }
-                if (effect_connector & READ_POS_2)
-                {
-                  EnableEffect(Connector::Two, Colour::Yellow);
-                }
-                if (effect_connector & READ_POS_3)
-                {
-                  EnableEffect(Connector::Two, Colour::Orange);
-                }
+                OnEffect(Connector::Two, effect_connector);
               }
             }
             return;
@@ -406,18 +340,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
               // Here is the blink effect
               if (effect_connector & READ_POS_6)
               {
-                if (effect_connector & READ_POS_0)
-                {
-                  EnableEffect(Connector::Two, Colour::Red);
-                }
-                if (effect_connector & READ_POS_1)
-                {
-                  EnableEffect(Connector::Two, Colour::Green);
-                }
-                if (effect_connector & READ_POS_3)
-                {
-                  EnableEffect(Connector::Two, Colour::Orange);
-                }
+                OnEffect(Connector::Two, effect_connector);
               }
             }
             else
@@ -428,18 +351,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
               // Here is the blink effect
               if (effect_connector & READ_POS_7)
               {
-                if (effect_connector & READ_POS_0)
-                {
-                  EnableEffect(Connector::Two, Colour::Red);
-                }
-                if (effect_connector & READ_POS_1)
-                {
-                  EnableEffect(Connector::Two, Colour::Green);
-                }
-                if (effect_connector & READ_POS_2)
-                {
-                  EnableEffect(Connector::Two, Colour::Yellow);
-                }
+                OnEffect(Connector::Two, effect_connector);
               }
             }
             return;
@@ -468,18 +380,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
               // Here is the blick efect
               if (effect_connector & READ_POS_4)
               {
-                if (effect_connector & READ_POS_1)
-                {
-                  EnableEffect(Connector::Three, Colour::Green);
-                }
-                if (effect_connector & READ_POS_2)
-                {
-                  EnableEffect(Connector::Three, Colour::Yellow);
-                }
-                if (effect_connector & READ_POS_3)
-                {
-                  EnableEffect(Connector::Three, Colour::Orange);
-                }
+                OnEffect(Connector::Three, effect_connector);
               }
             }
             else
@@ -490,18 +391,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
               // Here is the blick efect
               if (effect_connector & READ_POS_5)
               {
-                if (effect_connector & READ_POS_0)
-                {
-                  EnableEffect(Connector::Three, Colour::Red);
-                }
-                if (effect_connector & READ_POS_2)
-                {
-                  EnableEffect(Connector::Three, Colour::Yellow);
-                }
-                if (effect_connector & READ_POS_3)
-                {
-                  EnableEffect(Connector::Three, Colour::Orange);
-                }
+                OnEffect(Connector::Three, effect_connector);
               }
             }
             return;
@@ -517,18 +407,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
               // Here is the blick efect
               if (effect_connector & READ_POS_6)
               {
-                if (effect_connector & READ_POS_0)
-                {
-                  EnableEffect(Connector::Three, Colour::Red);
-                }
-                if (effect_connector & READ_POS_1)
-                {
-                  EnableEffect(Connector::Three, Colour::Green);
-                }
-                if (effect_connector & READ_POS_3)
-                {
-                  EnableEffect(Connector::Three, Colour::Orange);
-                }
+                OnEffect(Connector::Three, effect_connector);
               }
             }
             else
@@ -539,18 +418,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
               // Here is the blick efect
               if (effect_connector & READ_POS_7)
               {
-                if (effect_connector & READ_POS_0)
-                {
-                  EnableEffect(Connector::Three, Colour::Red);
-                }
-                if (effect_connector & READ_POS_1)
-                {
-                  EnableEffect(Connector::Three, Colour::Green);
-                }
-                if (effect_connector & READ_POS_2)
-                {
-                  EnableEffect(Connector::Three, Colour::Yellow);
-                }
+                OnEffect(Connector::Three, effect_connector);
               }
             }
             return;
@@ -571,18 +439,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
               // Here is the blick efect
               if (effect_connector & READ_POS_4)
               {
-                if (effect_connector & READ_POS_1)
-                {
-                  EnableEffect(Connector::Four, Colour::Green);
-                }
-                if (effect_connector & READ_POS_2)
-                {
-                  EnableEffect(Connector::Four, Colour::Yellow);
-                }
-                if (effect_connector & READ_POS_3)
-                {
-                  EnableEffect(Connector::Four, Colour::Orange);
-                }
+                OnEffect(Connector::Four, effect_connector);
               }
             }
             else
@@ -593,18 +450,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
               // Here is the blick efect
               if (effect_connector & READ_POS_5)
               {
-                if (effect_connector & READ_POS_0)
-                {
-                  EnableEffect(Connector::Four, Colour::Red);
-                }
-                if (effect_connector & READ_POS_2)
-                {
-                  EnableEffect(Connector::Four, Colour::Yellow);
-                }
-                if (effect_connector & READ_POS_3)
-                {
-                  EnableEffect(Connector::Four, Colour::Orange);
-                }
+                OnEffect(Connector::Four, effect_connector);
               }
             }
             return;
@@ -620,18 +466,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
               // Here is the blick efect
               if (effect_connector & READ_POS_6)
               {
-                if (effect_connector & READ_POS_0)
-                {
-                  EnableEffect(Connector::Four, Colour::Red);
-                }
-                if (effect_connector & READ_POS_1)
-                {
-                  EnableEffect(Connector::Four, Colour::Green);
-                }
-                if (effect_connector & READ_POS_3)
-                {
-                  EnableEffect(Connector::Four, Colour::Orange);
-                }
+                OnEffect(Connector::Four, effect_connector);
               }
             }
             else
@@ -642,18 +477,7 @@ void notifyDccAccState(uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, ui
               // Here is the blick efect
               if (effect_connector & READ_POS_7)
               {
-                if (effect_connector & READ_POS_0)
-                {
-                  EnableEffect(Connector::Four, Colour::Red);
-                }
-                if (effect_connector & READ_POS_1)
-                {
-                  EnableEffect(Connector::Four, Colour::Green);
-                }
-                if (effect_connector & READ_POS_2)
-                {
-                  EnableEffect(Connector::Four, Colour::Yellow);
-                }
+                OnEffect(Connector::Four, effect_connector);
               }
             }
             return;
@@ -732,6 +556,26 @@ void BlinkColors()
   if (control_effect_3_4 & READ_POS_3)
   {
     ToggleColorPin(CON_4_PIN_O);
+  }
+}
+
+void OnEffect(uint8_t conn, uint8_t effect_connector)
+{
+  if (effect_connector & READ_POS_0)
+  {
+    EnableEffect(conn, Colour::Red);
+  }
+  if (effect_connector & READ_POS_1)
+  {
+    EnableEffect(conn, Colour::Green);
+  }
+  if (effect_connector & READ_POS_2)
+  {
+    EnableEffect(conn, Colour::Yellow);
+  }
+  if (effect_connector & READ_POS_3)
+  {
+    EnableEffect(conn, Colour::Orange);
   }
 }
 
